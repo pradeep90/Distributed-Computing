@@ -2,7 +2,7 @@
 # define compiler and compiler flag variables
 #
 
-JFLAGS = -g
+JFLAGS = -g -classpath ..
 JC = javac
 
 
@@ -52,7 +52,7 @@ default: classes
 # with the .class suffix
 #
 
-classes: ReceiverThread.class Receiver.class Sender.class SenderThread.class
+classes: ReceiverThread.class SenderThread.class Receiver.class Sender.class 
 # $(CLASSES:.java=.class)
 
 

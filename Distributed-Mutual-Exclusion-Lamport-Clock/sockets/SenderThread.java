@@ -1,8 +1,10 @@
+package sockets;
+
 import java.net.*;
 import java.io.*;
 import java.lang.*;
 
-class SenderThread extends Thread {
+public class SenderThread extends Thread {
 
     Socket threadSoc;
 

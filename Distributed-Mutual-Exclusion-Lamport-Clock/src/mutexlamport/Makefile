@@ -2,7 +2,9 @@
 # define compiler and compiler flag variables
 #
 
-JFLAGS = -g -classpath ..
+# -d puts the generated .class files in that dir
+# -cp looks for any required .class files in those paths
+JFLAGS = -g -cp ../../class/ -d ../../class/
 JC = javac
 
 
@@ -36,7 +38,6 @@ JC = javac
 
 CLASSES = *.java
 
-
 #
 # the default make target entry
 #
@@ -52,15 +53,18 @@ default: classes
 # with the .class suffix
 #
 
-classes: ReceiverThread.class SenderThread.class Receiver.class Sender.class 
+classes: LogicalClock.class FileWriter.class
 # $(CLASSES:.java=.class)
+
+clock: LogicalClock.java
+	$(JC) $(JFLAGS) $^
 
 
 compress-files: clean
 	# tar zcvf ../Lift-Simulator.tar.gz ../Lift-Simulator
 
-run-threads:
-	./run-threads.bash
+run-program:
+	./run-program.bash
 
 #
 # RM is a predefined macro in make (RM = rm -f)

@@ -44,10 +44,13 @@
 *** Si <- Sj - Sj's REQUEST and Sj's ACK for Si's REQUEST
 ** Contradiction.
 * Implementation
-** Sender (Client)
-   CLOCK: [2012-08-29 Wed 20:45]
-** Receiver (Server)
-** LogicalClock
+** DONE Sender (Client)
+   CLOCK: [2012-08-29 Wed 20:45]--[2012-08-29 Wed 22:21] =>  1:36
+** DONE Receiver (Server)
+** DONE LogicalClock
+   CLOCK: [2012-08-29 Wed 23:54]--[2012-08-29 Wed 23:57] =>  0:03
+** Move to sockets package
+   CLOCK: [2012-08-30 Thu 00:00]--[2012-08-30 Thu 00:21] =>  0:21
 ** MutExExecutor
 *** SendRequest
 *** SendRelease
@@ -56,3 +59,6 @@
 *** EnterCS
 *** ExitCS
 ** FileWriter
+   CLOCK: [2012-08-30 Thu 00:35]
+   CLOCK: [2012-08-30 Thu 00:22]--[2012-08-30 Thu 00:35] =>  0:13
+

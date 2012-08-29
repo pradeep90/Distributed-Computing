@@ -1,4 +1,4 @@
 #!/bin/bash
 
-java Sender &
-java ReceiverThread
+java -cp .. sockets.Sender &
+java -cp .. sockets.ReceiverThread

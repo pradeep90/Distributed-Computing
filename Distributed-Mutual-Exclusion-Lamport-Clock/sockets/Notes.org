@@ -2,4 +2,7 @@
 
 * Java Makefile woes
 ** TODO When some .class files exist, `make classes` doesn't compile the remaining .java files.
-* VVIP To compile everything correctly after making them part of the package called sockets, I had to set classpath as '..' so that it would search for them under ./../sockets instead of ./sockets
+* Package
+** VVIP To COMPILE everything correctly, I had to set classpath as '..' so that it would search for the ".class" files under ../sockets instead of ./sockets
+** VVIP To RUN everything correctly, I had to set classpath AND use the package name of the class
+   java -cp .. sockets.Sender

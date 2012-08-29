@@ -9,9 +9,17 @@ public class FileWriter {
 
     String filename;
 
-    public static void main(String argv[]) {
+    public static void main(String[] argv) {
+
+        String nodeId;
+        if (argv.length == 0){
+            nodeId = "0";
+        } else {
+            nodeId = argv[0];
+        }
+        
         Random randomGenerator = new Random ();
-        String message = "Yo, boyz!";
+        String message = nodeId + " - Yo, boyz!";
         for (int i = 0; i < 10; i++){
             int randomInt = randomGenerator.nextInt (1000);
             String randomMessage = message + " " + randomInt;

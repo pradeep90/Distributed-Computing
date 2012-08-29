@@ -52,6 +52,7 @@
 ** Move to sockets package
    CLOCK: [2012-08-30 Thu 00:00]--[2012-08-30 Thu 00:21] =>  0:21
 ** MutExExecutor
+   CLOCK: [2012-08-30 Thu 02:01]
 *** SendRequest
 *** SendRelease
 *** ReceiveRequest
@@ -59,6 +60,7 @@
 *** EnterCS
 *** ExitCS
 ** FileWriter
-   CLOCK: [2012-08-30 Thu 00:35]
+   CLOCK: [2012-08-30 Thu 01:45]--[2012-08-30 Thu 02:01] =>  0:16
+   CLOCK: [2012-08-30 Thu 00:35]--[2012-08-30 Thu 01:45] =>  1:10
    CLOCK: [2012-08-30 Thu 00:22]--[2012-08-30 Thu 00:35] =>  0:13
 

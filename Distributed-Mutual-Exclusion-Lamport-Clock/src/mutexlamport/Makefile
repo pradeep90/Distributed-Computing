@@ -4,7 +4,7 @@
 
 # -d puts the generated .class files in that dir
 # -cp looks for any required .class files in those paths
-JFLAGS = -g -cp ../../class/ -d ../../class/
+JFLAGS = -g -cp ../../class/ -d ../../class/ -Xlint
 JC = javac
 
 
@@ -53,7 +53,7 @@ default: classes
 # with the .class suffix
 #
 
-classes: LogicalClock.class FileWriter.class
+classes: LogicalClock.class FileWriter.class MutexExecutor.class
 # $(CLASSES:.java=.class)
 
 clock: LogicalClock.java

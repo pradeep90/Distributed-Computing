@@ -1,0 +1,4 @@
+				Notes
+
+* Java Makefile woes
+** TODO When some .class files exist, `make classes` doesn't compile the remaining .java files.

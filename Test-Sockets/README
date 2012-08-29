@@ -1,0 +1,10 @@
+				README
+
+* To build the classes
+
+  make clean
+  make classes
+  
+* To run the code (with server as a sender and client as a receiver of messages)
+
+  make run-threads

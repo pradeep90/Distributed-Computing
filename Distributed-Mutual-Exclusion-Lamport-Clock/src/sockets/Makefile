@@ -2,9 +2,11 @@
 # define compiler and compiler flag variables
 #
 
+CLASS_FOLDER=../../class
+
 # -d puts the generated .class files in that dir
 # -cp looks for any required .class files in those paths
-JFLAGS = -g -cp ../../class/ -d ../../class/
+JFLAGS = -g -cp $(CLASS_FOLDER) -d $(CLASS_FOLDER) -Xlint
 JC = javac
 
 
@@ -54,7 +56,7 @@ default: classes
 # with the .class suffix
 #
 
-classes: ReceiverThread.class SenderThread.class Receiver.class Sender.class 
+classes: ReceiverCallable.class SenderThread.class Receiver.class Sender.class 
 # $(CLASSES:.java=.class)
 
 
@@ -69,4 +71,4 @@ run-threads:
 #
 
 clean:
-	$(RM) *.class *~
+	$(RM) $(CLASS_FOLDER)/sockets/*.class

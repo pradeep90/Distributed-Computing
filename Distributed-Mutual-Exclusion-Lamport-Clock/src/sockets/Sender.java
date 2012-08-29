@@ -20,7 +20,7 @@ public class Sender {
 	    }
 	}
 	catch (Exception e) {
-	    System.out.println("Oh Dear! " + e.toString());
+	    System.out.println("Error in Sender: " + e.toString());
 	}
     }
 }

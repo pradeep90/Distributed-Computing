@@ -33,12 +33,12 @@ public class SenderThread extends Thread {
 	try {
 	    PrintStream FibOut = new PrintStream(threadSoc.getOutputStream());
 						
-	    while (true) {
+	    for (int i = 0; i < 10; i++) {
 		int temp;
 
 		temp = F1;
 
-		FibOut.println(F1);
+		FibOut.print(F1 + " ");
 		Thread.sleep(500);
 
 		F1 = F2;

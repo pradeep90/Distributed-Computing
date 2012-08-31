@@ -2,13 +2,16 @@ package mutexlamport;
 
 public class LogicalClock {
     private int timeStamp;
+    private int processId;
     
-    LogicalClock (){
-        timeStamp = 0;
+    LogicalClock (int processId){
+        this.timeStamp = 0;
+        this.processId = processId;
     }
 
     public static void main (String argv[]){
-        LogicalClock clock = new LogicalClock ();
+        int testProcessId = 7;
+        LogicalClock clock = new LogicalClock (testProcessId);
         for (int i = 0; i < 10; i++){
             clock.update ();
             System.out.println (clock.getTimeStamp ());
@@ -32,5 +35,15 @@ public class LogicalClock {
 
     int setTimeStamp (){
         return timeStamp;
+    }
+
+    /**
+     * Return the message formatted with the current TS.
+     */
+    public String getTimeStampedString (String message){
+        // Later have the processId within the Timestamp itself
+        return "TS " + timeStamp
+                + " PID " + processId
+                + " : " + message;
     }
 }

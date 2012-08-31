@@ -16,13 +16,13 @@ import sockets.SenderThread;
 
 public class MutexExecutor {
 
-    LogicalClock clock;
     ServerSocket serverSocket;
     ExecutorService receiverExecutor;
     // ExecutorService senderExecutor;
 
     static final int SOCKET_READ_TIMEOUT = 200;
 
+    LogicalClock clock;
     String server_hostname;
     int server_port;
     int processId;
@@ -86,6 +86,7 @@ public class MutexExecutor {
 	this.peerHostnames = peerHostnames;
 	this.peerPorts = peerPorts;
         numNodes = peerHostnames.size () + 1;
+        clock = new LogicalClock (this.processId);
     }
     
     public void startExecution (){
@@ -180,8 +181,8 @@ public class MutexExecutor {
                     newSocket = serverSocket.accept();
                 } catch (SocketTimeoutException e) {
                     System.out.println ("No requests to the server");
-                    // No requests to the server
-                    return;
+                    // No requests to the server - try again
+                    continue;
                 }
 
                 // Create a ReceiverCallable thread
@@ -193,7 +194,10 @@ public class MutexExecutor {
                     message += future.get();
 
                     // TODO(spradeep): Handle the message
-                    System.out.println (processId + " - Handle Request: " + message);
+                    handleMessage (message);
+
+                    System.out.println (
+                        clock.getTimeStampedString ("[ " + message + " ]"));
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 } catch (ExecutionException e) {
@@ -208,10 +212,16 @@ public class MutexExecutor {
     	}
     }
 
-    // String makeRequest (foo, bar){
-    //     ;
-    // }
-    
+    /**
+     * If message is:
+     * + Request - Add to RQ
+     * + Release - Remove original request from RQ
+     *
+     * Update clock based on the message.
+     */
+    void handleMessage (String message){
+        clock.update ();
+    }
     
     /** 
      * Maybe have a pool of sender threads later.
@@ -229,7 +239,7 @@ public class MutexExecutor {
     
     void sendRequestToAll () throws UnknownHostException, IOException {
         for (int i = 0; i < peerHostnames.size (); i++){
-            String requestMessage = processId + " - Yo, boyz! I am send request.";
+            String requestMessage = clock.getTimeStampedString ("REQUEST");
             sendMessage (new Socket(peerHostnames.get (i),
                                     peerPorts.get (i)),
                          requestMessage);

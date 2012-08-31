@@ -71,7 +71,7 @@
 ** handleRequests
 *** If message is a Request, add it to RQ and send an Ack
 *** If message is a Release (req), dequeue (req)
-** sendRequestToAll
+** DONE sendRequestToAll
 *** Loop over the list of peers and send requests with timestamp
 *** Join all the threads - Block
 ** checkAllAcksReceived

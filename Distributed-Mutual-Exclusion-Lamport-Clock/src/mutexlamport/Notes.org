@@ -67,6 +67,7 @@
 ** Implement Timestamp
 ** DONE Getting list of host:port pairs on the command line
    CLOCK: [2012-08-30 Thu 16:09]--[2012-08-30 Thu 16:28] =>  0:19
+** TODO Check whether handleRequests works
 ** handleRequests
 *** If message is a Request, add it to RQ and send an Ack
 *** If message is a Release (req), dequeue (req)

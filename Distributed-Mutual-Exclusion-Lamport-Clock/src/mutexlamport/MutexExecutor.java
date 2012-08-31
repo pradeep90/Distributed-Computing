@@ -23,11 +23,11 @@ public class MutexExecutor {
 
     static final int SOCKET_READ_TIMEOUT = 200;
 
-    String hostname;
-    int port;
+    String server_hostname;
+    int server_port;
     int processId;
     List<String> peerHostnames;
-    List<String> peerPortnames;
+    List<Integer> peerPorts;
     
     static final int NUM_SERVER_THREADS = 3;
     static final int NUM_SENDER_THREADS = 3;
@@ -36,43 +36,55 @@ public class MutexExecutor {
     public int numNodes;
 
     public static void main(String[] argv) {
-        int port;
-        
         if (argv.length == 0){
 	    System.out.println ("Format: id host1:port1 [host2:port2 ...]");
 	    System.exit (1);
         }
 	
 	List<String> peerHostnames = new ArrayList<String> ();
-	List<String> peerPortnames = new ArrayList<String> ();
+	List<Integer> peerPorts = new ArrayList<Integer> ();
 
-	int processId = Integer.parseInt (argv[0]);
+        List<String> hostPorts = new ArrayList<String> ();
+        for (String arg : argv){
+            hostPorts.add (arg);
+        }
+
+	int processId = Integer.parseInt (hostPorts.remove (0));
+        String server_hostname;
+        int server_port;
         System.out.println ("processId");
         System.out.println (processId);
         
-        for (int i = 1; i < argv.length; i++){
-            String hostPortPair = argv[i];
+        for (String hostPortPair : hostPorts){
             System.out.println (hostPortPair);
             peerHostnames.add (hostPortPair.split (":")[0]);
-            peerPortnames.add (hostPortPair.split (":")[1]);
+            peerPorts.add (Integer.parseInt (hostPortPair.split (":")[1]));
         }
 
+        server_hostname = peerHostnames.remove (0);
+        server_port = peerPorts.remove (0);
+
 	System.out.println (peerHostnames);
-	System.out.println (peerPortnames);
+	System.out.println (peerPorts);
 
 	MutexExecutor mutexExecutor = new MutexExecutor (processId,
-                                                         peerHostnames, peerPortnames);
-
+                                                         server_hostname,
+                                                         server_port,
+                                                         peerHostnames,
+                                                         peerPorts);
 	mutexExecutor.startExecution ();
-	
     }
 
     MutexExecutor (int processId,
+                   String server_hostname,
+                   int server_port,
                    List<String> peerHostnames,
-                   List<String> peerPortnames) {
+                   List<Integer> peerPorts) {
+        this.server_hostname = server_hostname;
+        this.server_port = server_port;
         this.processId = processId;
 	this.peerHostnames = peerHostnames;
-	this.peerPortnames = peerPortnames;
+	this.peerPorts = peerPorts;
         numNodes = peerHostnames.size () + 1;
     }
     
@@ -83,8 +95,7 @@ public class MutexExecutor {
         boolean isAtHeadOfRQ = false;
 
         try {
-	    serverSocket = new ServerSocket (
-                Integer.parseInt (this.peerPortnames.get (0)));
+	    serverSocket = new ServerSocket (server_port);
 
 	    // Pool of threads to which receiver jobs can be submitted.
 	    receiverExecutor = Executors.newFixedThreadPool(NUM_SERVER_THREADS);
@@ -160,6 +171,7 @@ public class MutexExecutor {
         
     	try {
             serverSocket.setSoTimeout (SOCKET_READ_TIMEOUT);
+
     	    for (int i = 0; i < MAX_TOTAL_REQUESTS; i++) {
                 System.out.println ("Before accepting a new request");
                 Socket newSocket = null;
@@ -219,7 +231,7 @@ public class MutexExecutor {
         for (int i = 0; i < peerHostnames.size (); i++){
             String requestMessage = processId + " - Yo, boyz! I am send request.";
             sendMessage (new Socket(peerHostnames.get (i),
-                                    Integer.parseInt (peerPortnames.get (i))),
+                                    peerPorts.get (i)),
                          requestMessage);
         }
     }

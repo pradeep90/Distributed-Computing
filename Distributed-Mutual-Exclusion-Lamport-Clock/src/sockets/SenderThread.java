@@ -16,16 +16,20 @@ public class SenderThread extends Thread {
 
     public static void main(String argv[]) {
         try {
-	    Socket appSoc;
+            String server_host;
+            int server_port;
             String message;
-            if (argv.length != 0){
-                message = argv[0];
-            } else {
-                message = "Yo, boyz!";
+            if (argv.length == 0){
+                System.out.println ("Format: server_host:server_port message");
+                System.exit (0);
             }
+
+            server_host = argv[0].split (":")[0];
+            server_port = Integer.parseInt (argv[0].split (":")[1]);
+            message = argv[1];
             
-            appSoc = new Socket("localhost", 2001);
-	    SenderThread sender = new SenderThread (appSoc, message);
+	    SenderThread sender = new SenderThread (
+                new Socket(server_host, server_port), message);
 	    sender.run ();
         }
         catch (Exception e) {

@@ -18,14 +18,24 @@ public class ReceiverCallable implements Callable<String> {
             // Pool of threads to which jobs can be submitted.
             ExecutorService executor = Executors.newFixedThreadPool(1);
 
+            String server_host;
+            int server_port;
+            if (argv.length == 0){
+                System.out.println ("Format: server_host:server_port");
+                System.exit (0);
+            }
+
+            server_host = argv[0].split (":")[0];
+            server_port = Integer.parseInt (argv[0].split (":")[1]);
+            
             // Create a ReceiverCallable thread
-            Callable<String> worker = new ReceiverCallable(new Socket("localhost",2001));
+            Callable<String> worker = new ReceiverCallable(
+                new Socket(server_host, server_port));
             // Submit it to the Thread Pool
             Future<String> future = executor.submit(worker);
 
             try {
-                String message = future.get();
-                System.out.println ("ReceiverCallable main:" + message);
+                System.out.println ("ReceiverCallable main:" + future.get());
             } catch (InterruptedException e) {
                 e.printStackTrace();
             } catch (ExecutionException e) {

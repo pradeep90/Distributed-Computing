@@ -15,7 +15,7 @@ public class Receiver implements Runnable {
     ExecutorService executor;
     
     static final int NUM_THREADS = 3;
-    static final int MAX_TOTAL_REQUESTS = 10;
+    static final int MAX_TOTAL_REQUESTS = 1;
 
     public Receiver (ServerSocket serverSocket){
         this.serverSocket = serverSocket;
@@ -47,7 +47,6 @@ public class Receiver implements Runnable {
                     e.printStackTrace();
                 }
                 System.out.println ("After dealing with a request (if any)");
-
 	    }
             executor.shutdown();
 	}
@@ -57,16 +56,18 @@ public class Receiver implements Runnable {
     }
     
     public static void main(String argv[]) {
-        int port;
-        
+        String server_host;
+        int server_port;
         if (argv.length == 0){
-            port = 2001;
-        } else {
-            port = Integer.parseInt (argv[0]);
+            System.out.println ("Format: server_host:server_port");
+            System.exit (0);
         }
 
+        server_host = argv[0].split (":")[0];
+        server_port = Integer.parseInt (argv[0].split (":")[1]);
+
         try {
-            Receiver receiver = new Receiver (new ServerSocket (port));
+            Receiver receiver = new Receiver (new ServerSocket (server_port));
             Thread receiverThread = new Thread (receiver);
             receiverThread.run ();
         } catch (Exception e) {

@@ -46,4 +46,20 @@ public class LogicalClock {
                 + " PID " + processId
                 + " : " + message;
     }
+
+    /**
+     * Return processId embedded in message.
+     * 
+     * TODO(spradeep): This says message should ideally be a Class.
+     */
+    public static int extractProcessId (String message){
+        return 0;
+    }
+    
+    /**
+     * Return TimeStamp embedded in message.
+     */
+    public static int extractTimeStamp (String message){
+        return 7;
+    }
 }

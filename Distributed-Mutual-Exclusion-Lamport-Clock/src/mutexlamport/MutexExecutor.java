@@ -195,7 +195,6 @@ public class MutexExecutor {
 
                     // TODO(spradeep): Handle the message
                     handleMessage (message);
-
                     System.out.println (
                         clock.getTimeStampedString ("[ " + message + " ]"));
                 } catch (InterruptedException e) {
@@ -214,13 +213,16 @@ public class MutexExecutor {
 
     /**
      * If message is:
-     * + Request - Add to RQ
+     * + Request - Add to RQ and send Ack
      * + Release - Remove original request from RQ
      *
      * Update clock based on the message.
      */
     void handleMessage (String message){
         clock.update ();
+        // Send ack
+        sendMessage (LogicalClock.extractProcessId (message),
+                     "Ack " + LogicalClock.extractTimeStamp (message));
     }
     
     /** 
@@ -236,19 +238,32 @@ public class MutexExecutor {
             System.out.println("Died... " + e.toString());
         }
     }
-    
-    void sendRequestToAll () throws UnknownHostException, IOException {
-        for (int i = 0; i < peerHostnames.size (); i++){
-            String requestMessage = clock.getTimeStampedString ("REQUEST");
-            sendMessage (new Socket(peerHostnames.get (i),
-                                    peerPorts.get (i)),
-                         requestMessage);
+
+    /**
+     * Send message to peer with peerId.
+     */
+    void sendMessage (int peerId, String message){
+        try {
+            sendMessage (new Socket(peerHostnames.get (peerId),
+                                    peerPorts.get (peerId)),
+                         message);
+        } catch (Exception e) {
+            System.out.println("sendMessage error: " + e.toString());
         }
     }
     
+    void sendRequestToAll () throws UnknownHostException, IOException {
+        for (int peerId = 0; peerId < peerHostnames.size (); peerId++){
+            String requestMessage = clock.getTimeStampedString ("REQUEST");
+            sendMessage (peerId, requestMessage);
+        }
+    }
+
+    public void sendAck (String message){
+        
+    }
+
     // void sendRelease (){
     //     ;
     // }
-    
-
 }

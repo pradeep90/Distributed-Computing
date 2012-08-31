@@ -64,10 +64,10 @@
    CLOCK: [2012-08-30 Thu 00:35]--[2012-08-30 Thu 01:45] =>  1:10
    CLOCK: [2012-08-30 Thu 00:22]--[2012-08-30 Thu 00:35] =>  0:13
 * TODO What's left
-** Implement Timestamp
+** DONE Implement Timestamp
 ** DONE Getting list of host:port pairs on the command line
    CLOCK: [2012-08-30 Thu 16:09]--[2012-08-30 Thu 16:28] =>  0:19
-** TODO Check whether handleRequests works
+** DONE Check whether handleRequests works
 ** handleRequests
 *** If message is a Request, add it to RQ and send an Ack
 *** If message is a Release (req), dequeue (req)

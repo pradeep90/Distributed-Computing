@@ -38,7 +38,7 @@ public class ReceiverCallable implements Callable<String> {
         }
     }
     
-    ReceiverCallable(Socket inSoc) {
+    public ReceiverCallable(Socket inSoc) {
 	socket = inSoc;
     }
 

@@ -17,7 +17,7 @@ public class Receiver implements Runnable {
     static final int NUM_THREADS = 3;
     static final int MAX_TOTAL_REQUESTS = 10;
 
-    Receiver (ServerSocket serverSocket){
+    public Receiver (ServerSocket serverSocket){
         this.serverSocket = serverSocket;
 
 	// Pool of threads to which jobs can be submitted.
@@ -40,7 +40,7 @@ public class Receiver implements Runnable {
 
                 try {
                     message += future.get();
-                    System.out.println ("Receiver:" + message);
+                    System.out.println ("Receiver: " + message);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 } catch (ExecutionException e) {

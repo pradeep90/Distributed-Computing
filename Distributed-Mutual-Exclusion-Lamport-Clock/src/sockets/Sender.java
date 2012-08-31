@@ -14,7 +14,8 @@ public class Sender {
 	    while(true) {
 		Socket inSoc = sSoc.accept();
 				
-		SenderThread newSender = new SenderThread(inSoc);
+		SenderThread newSender = new SenderThread(inSoc,
+                                                          "Testing message send");
 				
 		newSender.start();
 	    }

@@ -52,7 +52,7 @@
 ** Move to sockets package
    CLOCK: [2012-08-30 Thu 00:00]--[2012-08-30 Thu 00:21] =>  0:21
 ** MutExExecutor
-   CLOCK: [2012-08-30 Thu 02:01]
+   CLOCK: [2012-08-30 Thu 02:01]--[2012-08-30 Thu 04:57] =>  2:56
 *** SendRequest
 *** SendRelease
 *** ReceiveRequest
@@ -63,4 +63,21 @@
    CLOCK: [2012-08-30 Thu 01:45]--[2012-08-30 Thu 02:01] =>  0:16
    CLOCK: [2012-08-30 Thu 00:35]--[2012-08-30 Thu 01:45] =>  1:10
    CLOCK: [2012-08-30 Thu 00:22]--[2012-08-30 Thu 00:35] =>  0:13
-
+* TODO What's left
+** Implement Timestamp
+** DONE Getting list of host:port pairs on the command line
+   CLOCK: [2012-08-30 Thu 16:09]--[2012-08-30 Thu 16:28] =>  0:19
+** handleRequests
+*** If message is a Request, add it to RQ and send an Ack
+*** If message is a Release (req), dequeue (req)
+** sendRequestToAll
+*** Loop over the list of peers and send requests with timestamp
+*** Join all the threads - Block
+** checkAllAcksReceived
+*** Loop over the boolean array and check
+** isAtHeadOfRQ
+*** trivial
+** dequeueRequest (request)
+** sendReleaseMessages
+*** same as sendRequestToAll
+*** Block

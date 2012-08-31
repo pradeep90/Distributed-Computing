@@ -4,9 +4,11 @@ import java.net.*;
 import java.io.*;
 import java.lang.*;
 
+// TODO(spradeep): Make this implement Callable
 public class SenderThread extends Thread {
 
     Socket threadSoc;
+    String message;
 
     int F1 = 1;
     int F2 = 1;
@@ -15,8 +17,15 @@ public class SenderThread extends Thread {
     public static void main(String argv[]) {
         try {
 	    Socket appSoc;
+            String message;
+            if (argv.length != 0){
+                message = argv[0];
+            } else {
+                message = "Yo, boyz!";
+            }
+            
             appSoc = new Socket("localhost", 2001);
-	    SenderThread sender = new SenderThread (appSoc);
+	    SenderThread sender = new SenderThread (appSoc, message);
 	    sender.run ();
         }
         catch (Exception e) {
@@ -25,35 +34,25 @@ public class SenderThread extends Thread {
     }
 
 
-    SenderThread(Socket inSoc) {
+    public SenderThread(Socket inSoc, String message) {
 	threadSoc = inSoc;
+        this.message = message;
     }
 	
     public void run() {
 	try {
-	    PrintStream FibOut = new PrintStream(threadSoc.getOutputStream());
-						
-	    for (int i = 0; i < 10; i++) {
-		int temp;
-
-		temp = F1;
-
-		FibOut.print(F1 + " ");
-		Thread.sleep(500);
-
-		F1 = F2;
-		F2 = temp + F2;
-	    }
+	    PrintStream Out = new PrintStream(threadSoc.getOutputStream());
+            Out.print(message);
 	}
 	catch (Exception e) {
-	    System.out.println("Whoops! " + e.toString());
+	    System.out.println("Error sending message: " + e.toString());
 	}
 		
 	try {
 	    threadSoc.close();
 	}
 	catch (Exception e) {
-	    System.out.println("Oh no! " + e.toString());
+	    System.out.println("Error closing sender socket: " + e.toString());
 	}
     }
 }

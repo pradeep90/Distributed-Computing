@@ -61,7 +61,7 @@ public class ReceiverCallable implements Callable<String> {
             reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             String line = reader.readLine();
             message += line;
-            System.out.println("ReceiverCallable: " + message);
+            // System.out.println("ReceiverCallable: " + message);
 	}
 	catch (Exception e) {
 	    System.out.println("Error while receiving message: " + e.toString());

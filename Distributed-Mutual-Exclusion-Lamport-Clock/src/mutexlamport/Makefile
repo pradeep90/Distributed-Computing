@@ -53,7 +53,7 @@ default: classes
 # with the .class suffix
 #
 
-classes: LogicalClock.class FileWriter.class MutexExecutor.class
+classes: TimeStamp.class LogicalClock.class MutexMessage.class FileWriter.class MutexExecutor.class
 # $(CLASSES:.java=.class)
 
 clock: LogicalClock.java

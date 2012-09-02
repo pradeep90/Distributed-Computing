@@ -26,8 +26,8 @@ public class MutexExecutor {
     String server_hostname;
     int server_port;
     int processId;
-    List<String> peerHostnames;
-    List<Integer> peerPorts;
+    List<String> allHostnames;
+    List<Integer> allPorts;
     
     static final int NUM_SERVER_THREADS = 3;
     static final int NUM_SENDER_THREADS = 3;
@@ -41,15 +41,17 @@ public class MutexExecutor {
 	    System.exit (1);
         }
 	
-	List<String> peerHostnames = new ArrayList<String> ();
-	List<Integer> peerPorts = new ArrayList<Integer> ();
+	List<String> allHostnames = new ArrayList<String> ();
+	List<Integer> allPorts = new ArrayList<Integer> ();
 
         List<String> hostPorts = new ArrayList<String> ();
         for (String arg : argv){
             hostPorts.add (arg);
         }
 
+        // The first arg is the processId
 	int processId = Integer.parseInt (hostPorts.remove (0));
+
         String server_hostname;
         int server_port;
         System.out.println ("processId");
@@ -57,35 +59,35 @@ public class MutexExecutor {
         
         for (String hostPortPair : hostPorts){
             System.out.println (hostPortPair);
-            peerHostnames.add (hostPortPair.split (":")[0]);
-            peerPorts.add (Integer.parseInt (hostPortPair.split (":")[1]));
+            allHostnames.add (hostPortPair.split (":")[0]);
+            allPorts.add (Integer.parseInt (hostPortPair.split (":")[1]));
         }
 
-        server_hostname = peerHostnames.remove (0);
-        server_port = peerPorts.remove (0);
+        server_hostname = allHostnames.get (processId);
+        server_port = allPorts.get (processId);
 
-	System.out.println (peerHostnames);
-	System.out.println (peerPorts);
+	System.out.println (allHostnames);
+	System.out.println (allPorts);
 
 	MutexExecutor mutexExecutor = new MutexExecutor (processId,
                                                          server_hostname,
                                                          server_port,
-                                                         peerHostnames,
-                                                         peerPorts);
+                                                         allHostnames,
+                                                         allPorts);
 	mutexExecutor.startExecution ();
     }
 
     MutexExecutor (int processId,
                    String server_hostname,
                    int server_port,
-                   List<String> peerHostnames,
-                   List<Integer> peerPorts) {
+                   List<String> allHostnames,
+                   List<Integer> allPorts) {
         this.server_hostname = server_hostname;
         this.server_port = server_port;
         this.processId = processId;
-	this.peerHostnames = peerHostnames;
-	this.peerPorts = peerPorts;
-        numNodes = peerHostnames.size () + 1;
+	this.allHostnames = allHostnames;
+	this.allPorts = allPorts;
+        numNodes = allHostnames.size ();
         clock = new LogicalClock (this.processId);
     }
     
@@ -184,7 +186,7 @@ public class MutexExecutor {
                     // No requests to the server - try again
                     continue;
                 }
-
+                
                 // Create a ReceiverCallable thread
                 Callable<String> worker = new ReceiverCallable(newSocket);
                 // Submit it to the Thread Pool
@@ -195,8 +197,8 @@ public class MutexExecutor {
 
                     // TODO(spradeep): Handle the message
                     handleMessage (message);
-                    System.out.println (
-                        clock.getTimeStampedString ("[ " + message + " ]"));
+                    // System.out.println ("getTimeStampedMessage (message)");
+                    System.out.println (getTimeStampedMessage (message));
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 } catch (ExecutionException e) {
@@ -208,6 +210,7 @@ public class MutexExecutor {
     	}
     	catch (Exception e) {
     	    System.out.println("Error in the server: " + e.toString());
+            e.printStackTrace ();
     	}
     }
 
@@ -220,9 +223,14 @@ public class MutexExecutor {
      */
     void handleMessage (String message){
         clock.update ();
+        // TODO(spradeep): if the message is not an ACK send an ack.
         // Send ack
-        sendMessage (LogicalClock.extractProcessId (message),
-                     "Ack " + LogicalClock.extractTimeStamp (message));
+        if (!MutexMessage.isAck (message)){
+            TimeStamp messageTimeStamp = new MutexMessage (message).getTimeStamp ();
+            sendMessage (messageTimeStamp.getProcessId (),
+                         "ACK " + messageTimeStamp.getTimeValue ());
+            
+        }
     }
     
     /** 
@@ -235,17 +243,17 @@ public class MutexExecutor {
             senderThread.join ();
         }
         catch (Exception e) {
-            System.out.println("Died... " + e.toString());
+            System.out.println("sendMessage error: " + e.toString());
         }
     }
 
     /**
-     * Send message to peer with peerId.
+     * Send message to peer with PID peerId.
      */
     void sendMessage (int peerId, String message){
         try {
-            sendMessage (new Socket(peerHostnames.get (peerId),
-                                    peerPorts.get (peerId)),
+            sendMessage (new Socket(allHostnames.get (peerId),
+                                    allPorts.get (peerId)),
                          message);
         } catch (Exception e) {
             System.out.println("sendMessage error: " + e.toString());
@@ -253,14 +261,24 @@ public class MutexExecutor {
     }
     
     void sendRequestToAll () throws UnknownHostException, IOException {
-        for (int peerId = 0; peerId < peerHostnames.size (); peerId++){
-            String requestMessage = clock.getTimeStampedString ("REQUEST");
+        for (int peerId = 0; peerId < allHostnames.size (); peerId++){
+            if (peerId == processId){
+                continue;
+            }
+
+            String requestMessage = getTimeStampedMessage ("REQUEST");
             sendMessage (peerId, requestMessage);
         }
     }
 
     public void sendAck (String message){
         
+    }
+
+    public String getTimeStampedMessage (String message){
+        return new MutexMessage (clock.getTimeStamp (),
+                                 "[ " + message + " ]")
+                .toString ();
     }
 
     // void sendRelease (){

@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# java -cp ../../class/ sockets.Sender localhost:36330 "Sender to ReceiverCallable" &
-java -cp ../../class/ sockets.ReceiverCallable localhost:36330 
+java -cp ../class/ sockets.Sender localhost:36330 "This is a test message..." &
+java -cp ../class/ sockets.ReceiverCallable localhost:36330 
 
 # java -cp ../../class/ sockets.Receiver localhost:36330 &
 # sleep 2

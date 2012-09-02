@@ -25,8 +25,7 @@ public class MutexExecutor {
 
     LogicalClock clock;
     String server_hostname;
-    String PICCOLO_ON_FEAR = "You'll laugh at your fears when you find "
-            + "out who you really are.";
+    String FINAL_MESSAGE = "Writing to Shared memory... This is a test message.";
     int server_port;
     int processId;
     int replyCounter;
@@ -61,23 +60,18 @@ public class MutexExecutor {
         // The first arg is the processId
 	int processId = Integer.parseInt (hostPorts.remove (0));
         String sharedFileName = hostPorts.remove (0);
+        System.out.println ("Writing output to " + sharedFileName);
 
         String server_hostname;
         int server_port;
-        System.out.println ("processId");
-        System.out.println (processId);
         
         for (String hostPortPair : hostPorts){
-            System.out.println (hostPortPair);
             allHostnames.add (hostPortPair.split (":")[0]);
             allPorts.add (Integer.parseInt (hostPortPair.split (":")[1]));
         }
 
         server_hostname = allHostnames.get (processId);
         server_port = allPorts.get (processId);
-
-	System.out.println (allHostnames);
-	System.out.println (allPorts);
 
 	MutexExecutor mutexExecutor = new MutexExecutor (
             processId,
@@ -124,8 +118,8 @@ public class MutexExecutor {
                 Thread.sleep (1000);
 
 	    	handleRequests ();
-                System.out.println (getTimeStampedMessage ("requestQueue"));
-                System.out.println (getTimeStampedMessage (requestQueue.toString ()));
+                System.out.println (getTimeStampedMessage (
+                    "requestQueue" + requestQueue.toString ()));
                 
                 if (!isWaitingForAcks){
                     // TODO(spradeep): Do stuff to see whether you wanna make a new request
@@ -152,9 +146,9 @@ public class MutexExecutor {
 
 	    	if (isWaitingForAcks && checkAllAcksReceived () && isAtHeadOfRQ ()){
                     isWaitingForAcks = false;
-                    System.out.println (getTimeStampedMessage (PICCOLO_ON_FEAR));
+                    System.out.println (getTimeStampedMessage (FINAL_MESSAGE));
                     distributedFileWriter.appendToFile (
-                        getTimeStampedMessage (PICCOLO_ON_FEAR) + "\n");
+                        getTimeStampedMessage (FINAL_MESSAGE) + "\n");
 
 	    	    // EXIT CS - Dequeue your request and send Release message to all nodes
 	    	    requestQueue.poll ();
@@ -210,7 +204,8 @@ public class MutexExecutor {
                 try {
                     newSocket = serverSocket.accept();
                 } catch (SocketTimeoutException e) {
-                    System.out.println ("No requests to the server");
+                    System.out.println (
+                        getTimeStampedMessage ("No requests to the server"));
                     // No requests to the server - try again
                     continue;
                 }

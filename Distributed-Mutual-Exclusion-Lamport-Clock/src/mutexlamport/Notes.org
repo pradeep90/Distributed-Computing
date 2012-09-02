@@ -63,7 +63,7 @@
    CLOCK: [2012-08-30 Thu 01:45]--[2012-08-30 Thu 02:01] =>  0:16
    CLOCK: [2012-08-30 Thu 00:35]--[2012-08-30 Thu 01:45] =>  1:10
    CLOCK: [2012-08-30 Thu 00:22]--[2012-08-30 Thu 00:35] =>  0:13
-* TODO What's left
+* DONE What's left
 ** DONE Implement Timestamp
 ** DONE Getting list of host:port pairs on the command line
    CLOCK: [2012-08-30 Thu 16:09]--[2012-08-30 Thu 16:28] =>  0:19

@@ -1,9 +1,22 @@
 				README
 
-* The MutexExecutor program allows you to write to a shared file from multiple processes with mutual exclusion.
-* To build
-  make -f src/sockets/Makefile classes
-  make -f src/mutexlamport/Makefile classes
-* To execute a sample configuration of 3 processes (running on 3 different ports) writing to a shared file
-  ./bin/run-mutex-program.bash
-* The common file is by default "shared-file.bash". It is passed in as a parameter.
++ The MutexExecutor program allows you to write to a shared file from
+  multiple processes with mutual exclusion.
+
++ To build
+
+  cd src/sockets/
+  make clean
+  make classes
+  cd ../../src/mutexlamport/
+  make clean
+  make classes
+  cd ../../
+
++ To execute a sample configuration of 3 processes (running on 3
+  different ports) writing to a shared file
+
+  cd bin/
+  ./run-mutex-program.bash
+
++ The common file is by default "shared-file.bash". It is passed in as a parameter.

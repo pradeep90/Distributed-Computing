@@ -1,1 +1,0 @@
-../../bin/run-mutex-program.bash

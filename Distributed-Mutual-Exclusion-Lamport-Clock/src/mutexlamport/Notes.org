@@ -68,17 +68,25 @@
 ** DONE Getting list of host:port pairs on the command line
    CLOCK: [2012-08-30 Thu 16:09]--[2012-08-30 Thu 16:28] =>  0:19
 ** DONE Check whether handleRequests works
-** handleRequests
+** DONE handleRequests
 *** If message is a Request, add it to RQ and send an Ack
 *** If message is a Release (req), dequeue (req)
 ** DONE sendRequestToAll
 *** Loop over the list of peers and send requests with timestamp
 *** Join all the threads - Block
-** checkAllAcksReceived
+** DONE checkAllAcksReceived
 *** Loop over the boolean array and check
-** isAtHeadOfRQ
+*** DONE Nah. I'm going with a counter.
+** DONE isAtHeadOfRQ
 *** trivial
-** dequeueRequest (request)
-** sendReleaseMessages
+** DONE sendReleaseMessages
 *** same as sendRequestToAll
 *** Block
+* Gotchas
+** All the trouble with make not giving me up-to-date stuff and the `package` hassle
+** Had to override equals (Object) in TimeStamp so that it can be used to remove () stuff in the PriorityQueue.
+** Simply swapped TS and PID in the timestamp message (priding myself on the fact that my code was so DRY and how I only had to change it in one place)
+*** Ha ha!
+*** Cascade of errors
+*** VVIP Lesson: Unit Tests are essential. I wouldn't have any of these needless and enthusiasm-sapping errors if I'd implemented Unit Tests
+** getTimeStamp in LogicalClock had to return a copy of the TimeStamp instead of the TimeStamp itself because we don't want the returned value (reference, actually) to change when the clock is updated.

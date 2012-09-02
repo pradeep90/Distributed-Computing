@@ -64,7 +64,7 @@ compress-files: clean
 	# tar zcvf ../Lift-Simulator.tar.gz ../Lift-Simulator
 
 run-program:
-	./run-program.bash
+	../../bin/run-mutex-program.bash
 
 #
 # RM is a predefined macro in make (RM = rm -f)
@@ -72,3 +72,4 @@ run-program:
 
 clean:
 	$(RM) *.class *~
+	$(RM) shared-file.txt

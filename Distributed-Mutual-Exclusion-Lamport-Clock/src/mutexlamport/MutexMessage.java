@@ -7,8 +7,10 @@ public class MutexMessage {
     private TimeStamp timeStamp;
     private String message;
     private static final Pattern REQUEST_PATTERN =
-            Pattern.compile("^TS (\\d+) PID (\\d+) : (.*)$");
-    private static final String ACK_REGEX = "^ACK (\\d+)$";
+            Pattern.compile("^PID (\\d+) TS (\\d+) : (.*)$");
+    private static final String ACK_REGEX = "^ACK (\\d+) from (\\d+)$";
+    private static final String REQUEST_REGEX = "^PID (\\d+) TS (\\d+) : \\[ (REQUEST) \\]$";
+    private static final String RELEASE_REGEX = "^PID (\\d+) TS (\\d+) : \\[ (RELEASE) \\]$";
     
     public MutexMessage (TimeStamp timeStamp, String message){
         this.timeStamp = timeStamp;
@@ -18,17 +20,17 @@ public class MutexMessage {
     public MutexMessage (String timeStampedMessage){
         Matcher m = REQUEST_PATTERN.matcher(timeStampedMessage);
 
-        System.out.println (timeStampedMessage);
+        // System.out.println (timeStampedMessage);
 
         if (m.find()) {
-            this.timeStamp = new TimeStamp (m.group (1), m.group (2));
+            this.timeStamp = new TimeStamp (m.group (2), m.group (1));
             this.message = m.group (3);
         } 
         // TODO(spradeep): Else, cup or throw Exception
     }
    
     public TimeStamp getTimeStamp (){
-        return timeStamp;
+        return new TimeStamp (timeStamp);
     }
 
     public String getMessage (){
@@ -44,6 +46,14 @@ public class MutexMessage {
 
     public static boolean isAck (String message){
         return message.matches (ACK_REGEX);
+    }
+
+    public static boolean isRelease (String message){
+        return message.matches (RELEASE_REGEX);
+    }
+
+    public static boolean isRequest (String message){
+        return message.matches (REQUEST_REGEX);
     }
 }
     

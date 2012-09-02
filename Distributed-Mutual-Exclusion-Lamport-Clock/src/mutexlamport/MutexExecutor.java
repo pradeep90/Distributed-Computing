@@ -5,6 +5,7 @@ import java.lang.*;
 import java.net.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.PriorityQueue;
 import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -24,10 +25,18 @@ public class MutexExecutor {
 
     LogicalClock clock;
     String server_hostname;
+    String PICCOLO_ON_FEAR = "You'll laugh at your fears when you find "
+            + "out who you really are.";
     int server_port;
     int processId;
+    int replyCounter;
+    TimeStamp requestTimeStamp;
+    FileWriter distributedFileWriter;
+    
     List<String> allHostnames;
     List<Integer> allPorts;
+
+    PriorityQueue<TimeStamp> requestQueue;
     
     static final int NUM_SERVER_THREADS = 3;
     static final int NUM_SENDER_THREADS = 3;
@@ -37,7 +46,7 @@ public class MutexExecutor {
 
     public static void main(String[] argv) {
         if (argv.length == 0){
-	    System.out.println ("Format: id host1:port1 [host2:port2 ...]");
+	    System.out.println ("Format: id shared_file_name host1:port1 [host2:port2 ...]");
 	    System.exit (1);
         }
 	
@@ -51,6 +60,7 @@ public class MutexExecutor {
 
         // The first arg is the processId
 	int processId = Integer.parseInt (hostPorts.remove (0));
+        String sharedFileName = hostPorts.remove (0);
 
         String server_hostname;
         int server_port;
@@ -69,11 +79,13 @@ public class MutexExecutor {
 	System.out.println (allHostnames);
 	System.out.println (allPorts);
 
-	MutexExecutor mutexExecutor = new MutexExecutor (processId,
-                                                         server_hostname,
-                                                         server_port,
-                                                         allHostnames,
-                                                         allPorts);
+	MutexExecutor mutexExecutor = new MutexExecutor (
+            processId,
+            server_hostname,
+            server_port,
+            allHostnames,
+            allPorts,
+            new FileWriter (sharedFileName));
 	mutexExecutor.startExecution ();
     }
 
@@ -81,7 +93,8 @@ public class MutexExecutor {
                    String server_hostname,
                    int server_port,
                    List<String> allHostnames,
-                   List<Integer> allPorts) {
+                   List<Integer> allPorts,
+                   FileWriter distributedFileWriter) {
         this.server_hostname = server_hostname;
         this.server_port = server_port;
         this.processId = processId;
@@ -89,13 +102,14 @@ public class MutexExecutor {
 	this.allPorts = allPorts;
         numNodes = allHostnames.size ();
         clock = new LogicalClock (this.processId);
+        requestQueue = new PriorityQueue<TimeStamp>();
+        this.distributedFileWriter = distributedFileWriter;
     }
     
     public void startExecution (){
 
         boolean isNewRequest = false;
         boolean isWaitingForAcks = false;
-        boolean isAtHeadOfRQ = false;
 
         try {
 	    serverSocket = new ServerSocket (server_port);
@@ -110,38 +124,46 @@ public class MutexExecutor {
                 Thread.sleep (1000);
 
 	    	handleRequests ();
-        
-	    	// TODO(spradeep): Do stuff to see whether you wanna make a new request
-	    	Random randomGenerator = new Random ();
-	    	isNewRequest =
-                        randomGenerator.nextInt (numNodes) == processId ? true: false;
-
-                // if (processId == 0){
-                //     isNewRequest = true;
-                // }
-
-	    	// If not making a new request and not waiting for Acks, loop 
-	    	if (!isNewRequest && !isWaitingForAcks){
-	    	    continue;
-	    	}
+                System.out.println (getTimeStampedMessage ("requestQueue"));
+                System.out.println (getTimeStampedMessage (requestQueue.toString ()));
+                
+                if (!isWaitingForAcks){
+                    // TODO(spradeep): Do stuff to see whether you wanna make a new request
+                    Random randomGenerator = new Random ();
+                    isNewRequest =
+                            randomGenerator.nextInt (numNodes) == processId ? true: false;
+                    if (!isNewRequest){
+                        continue;
+                    }
+                }
 
 	    	// If making a new request, send requests to all nodes
 	    	if (isNewRequest){
-	    	    sendRequestToAll ();
+                    requestTimeStamp = clock.getTimeStamp ();
+                    requestQueue.add (clock.getTimeStamp ());
+                    System.out.println (getTimeStampedMessage ("Sending request..."));
+	    	    broadcastMessage (getTimeStampedMessage ("REQUEST"));
+                    // TODO(spradeep): Should this be here?
+                    clock.update ();
 	    	    isWaitingForAcks = true;
 	    	    isNewRequest = false;
+                    replyCounter = numNodes - 1;
 	    	}
 
-	    	// // If waiting for Acks and you have received Acks from
-	    	// // everyone and you are at the head of RQ, ENTER CS
-	    	// if (isWaitingForAcks && checkAllAcksReceived () && isAtHeadOfRQ ()){
-                isWaitingForAcks = false;
-	    	//     // TODO(spradeep): ENTER CS
+	    	if (isWaitingForAcks && checkAllAcksReceived () && isAtHeadOfRQ ()){
+                    isWaitingForAcks = false;
+                    System.out.println (getTimeStampedMessage (PICCOLO_ON_FEAR));
+                    distributedFileWriter.appendToFile (
+                        getTimeStampedMessage (PICCOLO_ON_FEAR) + "\n");
 
-	    	//     // EXIT CS - Dequeue your request and send Release message to all nodes
-	    	//     dequeueRequest (yourRequest);
-	    	//     sendReleaseMessages ();
-	    	// }
+	    	    // EXIT CS - Dequeue your request and send Release message to all nodes
+	    	    requestQueue.poll ();
+
+                    // Send release message with the TS of the request
+	    	    broadcastMessage (getTimeStampedMessage (requestTimeStamp,
+                                                             "RELEASE"));
+                    clock.update ();
+	    	}
 	    }
 	} catch (Exception e) {
 	    System.out.println ("Error while trying for mutual exclusion:"
@@ -152,14 +174,20 @@ public class MutexExecutor {
         }
     }
 
-
-    // boolean isAtHeadOfRQ (){
-    //     ;
-    // }
+    /**
+     * @return true iff a request from this node is at the head of
+     * local RQ.
+     */
+    boolean isAtHeadOfRQ (){
+        return requestQueue.peek ().getProcessId () == processId;
+    }
     
-    // boolean checkAllAcksReceived (){
-    //     ;
-    // }
+    /**
+     * @return true iff Acks from all peers have been received.
+     */
+    boolean checkAllAcksReceived (){
+        return replyCounter == 0;
+    }
     
     // MutexExecutor (String givenFilename){
 
@@ -176,7 +204,7 @@ public class MutexExecutor {
             serverSocket.setSoTimeout (SOCKET_READ_TIMEOUT);
 
     	    for (int i = 0; i < MAX_TOTAL_REQUESTS; i++) {
-                System.out.println ("Before accepting a new request");
+                // System.out.println ("Before accepting a new request");
                 Socket newSocket = null;
                 
                 try {
@@ -195,17 +223,16 @@ public class MutexExecutor {
                 try {
                     message += future.get();
 
-                    // TODO(spradeep): Handle the message
-                    handleMessage (message);
                     // System.out.println ("getTimeStampedMessage (message)");
                     System.out.println (getTimeStampedMessage (message));
+                    // TODO(spradeep): Handle the message
+                    handleMessage (message);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 } catch (ExecutionException e) {
                     e.printStackTrace();
                 }
-                System.out.println ("After dealing with a request (if any)");
-
+                // System.out.println ("After dealing with a request (if any)");
     	    }
     	}
     	catch (Exception e) {
@@ -220,16 +247,26 @@ public class MutexExecutor {
      * + Release - Remove original request from RQ
      *
      * Update clock based on the message.
+     * 
+     * TODO(spradeep): Maybe pass in a MutexMessage instead of a
+     * String and then use message.isRequest instead of having a
+     * tell-tale (?) static method?
      */
     void handleMessage (String message){
+        MutexMessage mutexMessage = new MutexMessage (message);
         clock.update ();
         // TODO(spradeep): if the message is not an ACK send an ack.
-        // Send ack
-        if (!MutexMessage.isAck (message)){
-            TimeStamp messageTimeStamp = new MutexMessage (message).getTimeStamp ();
+        if (MutexMessage.isRequest (message)){
+            // Send ack
+            TimeStamp messageTimeStamp = mutexMessage.getTimeStamp ();
+            requestQueue.add (messageTimeStamp);
             sendMessage (messageTimeStamp.getProcessId (),
-                         "ACK " + messageTimeStamp.getTimeValue ());
-            
+                         "ACK " + messageTimeStamp.getProcessId ()
+                         + " from " + processId);
+        } else if (MutexMessage.isAck (message)){
+            replyCounter--;
+        } else if (MutexMessage.isRelease (message)){
+            boolean removed = requestQueue.remove (mutexMessage.getTimeStamp ());
         }
     }
     
@@ -260,14 +297,15 @@ public class MutexExecutor {
         }
     }
     
-    void sendRequestToAll () throws UnknownHostException, IOException {
-        for (int peerId = 0; peerId < allHostnames.size (); peerId++){
+    /**
+     * Send message to all peers.
+     */
+    void broadcastMessage (String message) throws UnknownHostException, IOException {
+        for (int peerId = 0; peerId < numNodes; peerId++){
             if (peerId == processId){
                 continue;
             }
-
-            String requestMessage = getTimeStampedMessage ("REQUEST");
-            sendMessage (peerId, requestMessage);
+            sendMessage (peerId, message);
         }
     }
 
@@ -276,12 +314,13 @@ public class MutexExecutor {
     }
 
     public String getTimeStampedMessage (String message){
-        return new MutexMessage (clock.getTimeStamp (),
+        return getTimeStampedMessage (clock.getTimeStamp (), message);
+    }
+
+    public String getTimeStampedMessage (TimeStamp timeStamp, String message){
+        return new MutexMessage (timeStamp,
                                  "[ " + message + " ]")
                 .toString ();
     }
-
-    // void sendRelease (){
-    //     ;
-    // }
 }
+

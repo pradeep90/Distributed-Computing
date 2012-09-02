@@ -27,8 +27,14 @@ public class LogicalClock {
         update ();
     }
 
+    /**
+     * Send a copy of the timestamp.
+     *
+     * Must send a copy and not the timestamp itself because we do not
+     * want it to be modified later when the clock is updated.
+     */ 
     TimeStamp getTimeStamp (){
-        return timeStamp;
+        return new TimeStamp (timeStamp);
     }
 
     void setTimeStamp (int timeValue){

@@ -1,6 +1,6 @@
 package mutexlamport;
 
-public class TimeStamp {
+public class TimeStamp implements Comparable<TimeStamp> {
     private int timeValue;
     private int processId;
 
@@ -14,6 +14,52 @@ public class TimeStamp {
         this.processId = Integer.parseInt (processId);
     }
 
+    public TimeStamp (TimeStamp timeStamp){
+        this.timeValue = timeStamp.getTimeValue ();
+        this.processId = timeStamp.getProcessId ();
+    }
+    
+    /**
+     * @return -1/0/1 if this is less/equal/greater than
+     * otherTimeStamp.
+     */
+    public int compareTo (TimeStamp otherTimeStamp){
+        final int EQUAL = 0;
+        final int AFTER = 1;
+        final int BEFORE = -1;
+        
+        if (this == otherTimeStamp){
+            return EQUAL;
+        }
+
+        int otherTimeValue = otherTimeStamp.getTimeValue ();
+        int otherProcessId = otherTimeStamp.getProcessId ();
+
+        if (timeValue < otherTimeValue){
+            return BEFORE;
+        }
+        else if (timeValue == otherTimeValue) {
+            if (processId < otherProcessId){
+                return BEFORE;
+            } else if (processId == otherProcessId) {
+                return EQUAL;
+            } else {
+                return AFTER;
+            }
+        } else {
+            return AFTER;
+        }
+    }
+
+    public boolean equals (Object o){
+        if (!(o instanceof TimeStamp)){
+            return false;
+        }
+        TimeStamp otherTimeStamp = (TimeStamp) o;
+        return timeValue == otherTimeStamp.getTimeValue ()
+                && processId == otherTimeStamp.getProcessId ();
+    }
+    
     public void increment (){
         timeValue++;
     }
@@ -32,6 +78,7 @@ public class TimeStamp {
 
 
     public String toString (){
-        return "TS " + timeValue + " PID " + processId;
+        return "PID " + processId
+                + " TS " + timeValue;
     }
 }

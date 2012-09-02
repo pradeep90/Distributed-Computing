@@ -64,7 +64,7 @@ compress-files: clean
 	# tar zcvf ../Lift-Simulator.tar.gz ../Lift-Simulator
 
 run-threads:
-	./run-threads.bash
+	../../bin/run-socket-test-program.bash
 
 #
 # RM is a predefined macro in make (RM = rm -f)

@@ -90,9 +90,3 @@
 *** Cascade of errors
 *** VVIP Lesson: Unit Tests are essential. I wouldn't have any of these needless and enthusiasm-sapping errors if I'd implemented Unit Tests
 ** getTimeStamp in LogicalClock had to return a copy of the TimeStamp instead of the TimeStamp itself because we don't want the returned value (reference, actually) to change when the clock is updated.
-* Writing JUnit tests
-** TODO http://junit.sourceforge.net/doc/faq/faq.htm#organize_1
-** generic makefile (including unit tests building) - http://www.makelinux.net/make3/make3-CHP-9-SECT-2
-** ditto - http://comsci.liu.edu/~league/dist/rngzip/trunk/Makefile
-** tutorial - http://www.vogella.com/articles/JUnit/article.html
-** TODO Have proper DRY makefile rules for building and running the unit tests

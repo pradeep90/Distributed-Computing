@@ -2,7 +2,7 @@
 # define compiler and compiler flag variables
 #
 
-CLASS_FOLDER=../../class
+CLASS_FOLDER=../../classes
 
 # -d puts the generated .class files in that dir
 # -cp looks for any required .class files in those paths

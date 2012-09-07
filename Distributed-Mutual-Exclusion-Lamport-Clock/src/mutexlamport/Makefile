@@ -4,9 +4,9 @@
 
 # -d puts the generated .class files in that dir
 # -cp looks for any required .class files in those paths
-JFLAGS = -g -cp ../../class/ -d ../../class/ -Xlint
-RUN_FLAGS = -cp ../../class/:/usr/share/java/junit4-4.8.2.jar
-TEST_FLAGS = -g -cp ../../class/:/usr/share/java/junit4-4.8.2.jar -d ../../class/ -Xlint
+JFLAGS = -g -cp ../../classes/ -d ../../classes/ -Xlint
+RUN_FLAGS = -cp ../../classes/:/usr/share/java/junit4-4.8.2.jar
+TEST_FLAGS = -g -cp ../../classes/:/usr/share/java/junit4-4.8.2.jar -d ../../classes/ -Xlint
 JC = javac
 
 
@@ -62,7 +62,7 @@ clock: LogicalClock.java
 	$(JC) $(JFLAGS) $^
 
 tests:
-	$(JC) $(TEST_FLAGS) ../../test/mutexlamport/LogicalClockTest.java
+	$(JC) $(TEST_FLAGS) ../../tests/mutexlamport/LogicalClockTest.java
 	java $(RUN_FLAGS) org.junit.runner.JUnitCore mutexlamport.LogicalClockTest
 
 compress-files: clean
@@ -76,5 +76,5 @@ run-program:
 #
 
 clean:
-	$(RM) *.class *~
+	$(RM) ../../classes/mutexlamport/*.class *~
 	$(RM) shared-file.txt

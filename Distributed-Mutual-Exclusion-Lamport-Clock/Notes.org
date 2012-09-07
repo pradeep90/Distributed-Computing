@@ -1,0 +1,8 @@
+				Notes
+
+* Writing JUnit tests
+** TODO http://junit.sourceforge.net/doc/faq/faq.htm#organize_1
+** TODO generic makefile (including unit tests building) - http://www.makelinux.net/make3/make3-CHP-9-SECT-2
+** TODO Have proper DRY makefile rules for building and running the unit tests
+** TODO ditto - http://comsci.liu.edu/~league/dist/rngzip/trunk/Makefile
+** tutorial - http://www.vogella.com/articles/JUnit/article.html

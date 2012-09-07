@@ -5,6 +5,8 @@
 # -d puts the generated .class files in that dir
 # -cp looks for any required .class files in those paths
 JFLAGS = -g -cp ../../class/ -d ../../class/ -Xlint
+RUN_FLAGS = -cp ../../class/:/usr/share/java/junit4-4.8.2.jar
+TEST_FLAGS = -g -cp ../../class/:/usr/share/java/junit4-4.8.2.jar -d ../../class/ -Xlint
 JC = javac
 
 
@@ -59,6 +61,9 @@ classes: TimeStamp.class LogicalClock.class MutexMessage.class FileWriter.class 
 clock: LogicalClock.java
 	$(JC) $(JFLAGS) $^
 
+tests:
+	$(JC) $(TEST_FLAGS) ../../test/mutexlamport/LogicalClockTest.java
+	java $(RUN_FLAGS) org.junit.runner.JUnitCore mutexlamport.LogicalClockTest
 
 compress-files: clean
 	# tar zcvf ../Lift-Simulator.tar.gz ../Lift-Simulator

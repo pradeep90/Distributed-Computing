@@ -1,8 +1,10 @@
 				Notes
 
-* Writing JUnit tests
-** TODO http://junit.sourceforge.net/doc/faq/faq.htm#organize_1
-** TODO generic makefile (including unit tests building) - http://www.makelinux.net/make3/make3-CHP-9-SECT-2
-** TODO Have proper DRY makefile rules for building and running the unit tests
-** TODO ditto - http://comsci.liu.edu/~league/dist/rngzip/trunk/Makefile
-** tutorial - http://www.vogella.com/articles/JUnit/article.html
+* DONE Tool support for writing JUnit tests
+** DONE http://junit.sourceforge.net/doc/faq/faq.htm#organize_1
+** DONE generic makefile (including unit tests building) - http://www.makelinux.net/make3/make3-CHP-9-SECT-2
+** DONE Have proper DRY makefile rules for building and running the unit tests
+** DONE ditto - http://comsci.liu.edu/~league/dist/rngzip/trunk/Makefile
+** DONE tutorial - http://www.vogella.com/articles/JUnit/article.html
+* VVIP I'm making the .class files for the unit tests go in classes/tests/. This means I'm compiling source files and test files separately because AFAIK you can only supply one -d (output dir) during compilation.
+* I got hamcrest related NoClassDefFoundError so I added it to the classpath

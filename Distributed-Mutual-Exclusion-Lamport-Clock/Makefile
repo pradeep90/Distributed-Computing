@@ -2,8 +2,6 @@
 # From http://www.makelinux.net/make3/make3-CHP-9-SECT-2
 # Modified to remove errors in the source (tab vs spaces)
 
-
-
 VERSION_NUMBER := 1.0
 
 
@@ -14,19 +12,21 @@ SOURCE_DIR  := src
 
 OUTPUT_DIR  := classes
 
-
+TEST_OUTPUT_DIR := classes/tests
 
 # Unix tools
 
-AWK         := awk
+AWK     := awk
 
-FIND        := /usr/bin/find
+SED 	:= sed
 
-MKDIR       := mkdir -p
+FIND    := /usr/bin/find
 
-RM          := rm -rf
+MKDIR   := mkdir -p
 
-SHELL       := /bin/bash
+RM      := rm -rf
+
+SHELL   := /bin/bash
 
 
 
@@ -43,7 +43,9 @@ XERCES_HOME := /opt/xerces-1_4_4
 
 JUNIT_HOME  := /usr/share/java
 
+JUNIT_JAR := $(JUNIT_HOME)/junit4-4.8.2.jar
 
+HAMCREST_JAR := $(JUNIT_HOME)/hamcrest-core-1.1.jar
 
 # Java tools
 
@@ -54,6 +56,12 @@ JAVAC       := $(JAVA_HOME)/bin/javac
 
 
 JFLAGS      :=	-sourcepath $(SOURCE_DIR) -d $(OUTPUT_DIR) -source 1.6
+
+RUN_FLAGS := -cp $(OUTPUT_DIR)
+
+TEST_BUILD_FLAGS := -g -cp $(OUTPUT_DIR):$(JUNIT_JAR) -d $(TEST_OUTPUT_DIR) -Xlint
+
+TEST_RUN_FLAGS := -cp $(OUTPUT_DIR):$(TEST_OUTPUT_DIR):$(JUNIT_JAR):$(HAMCREST_JAR) org.junit.runner.JUnitCore
 
 # TODO: Add -g??
 
@@ -258,131 +266,70 @@ help:
         @$(call brief-help, $(CURDIR)/Makefile)
 
 
-
+############ I understand stuff from here on ############
 # all - Perform all tasks for a complete build
 
 .PHONY: all
 
-all: compile jars javadoc
+all: compile javadoc
 
+# all_src_files - Temp file for holding source file list
 
-
-# all_javas - Temp file for holding source file list
-
-all_javas := $(OUTPUT_DIR)/all.javas
-
-
+all_src_files := $(OUTPUT_DIR)/all-src-files.txt
+all_tests := $(OUTPUT_DIR)/all-tests.txt
+tests := $(OUTPUT_DIR)/tests.txt
 
 # compile - Compile the source
 
 .PHONY: compile
 
-compile: $(all_javas)
+compile: $(all_src_files)
 	$(JAVAC) $(JFLAGS) @$<
 
 
 
-# all_javas - Gather source file list
+# all_src_files - Gather source file list
 
-.INTERMEDIATE: $(all_javas)
+# I really don't know what .INTERMEDIATE does.
+# .INTERMEDIATE: $(all_src_files) $(all_tests)
 
-$(all_javas):
+.PHONY: $(all_src_files) $(all_tests)
+
+$(all_src_files):
 	$(FIND) $(SOURCE_DIR) -name '*.java' > $@
 
+# Building Unit Tests
 
+TEST_PATH := tests
 
-# jar_list - List of all jars to create
+build_src_and_tests: compile build_tests
 
-jar_list := server_jar ui_jar
+$(all_tests):
+	$(FIND) $(TEST_PATH) -name '*.java' > $@
+	$(SED) -e 's:^tests/::' -e 's:\.java::' -e 's:/:.:g' $@ > $(tests)
 
+build_tests: $(all_tests)
+	mkdir -p $(TEST_OUTPUT_DIR)
+	$(JAVAC) $(TEST_BUILD_FLAGS) @$<
 
-
-# jars - Create all jars
-
-.PHONY: jars
-
-jars: $(jar_list)
-
-
-
-# server_jar - Create the $(server_jar)
-
-server_jar_name     := $(OUTPUT_DIR)/lib/a.jar
-
-server_jar_manifest := src/com/company/manifest/foo.mf
-
-server_jar_packages := com/company/m com/company/n
-
-
-
-# ui_jar - create the $(ui_jar)
-
-ui_jar_name     := $(OUTPUT_DIR)/lib/b.jar
-
-ui_jar_manifest := src/com/company/manifest/bar.mf
-
-ui_jar_packages := com/company/o com/company/p
-
-
-# TODO
-# # Create an explicit rule for each jar
-
-## $(foreach j, $(jar_list), $(eval $(call make-jar,$j)))
-# $(eval	$(call make-jar,server_jar))
-# $(eval	$(call make-jar,ui_jar))
-
-################################ Test cases
-
-TEST_CLASSPATH := tests
-
-JUNIT_SOURCES := $(shell find tests -name '*.java' | $(STRIP_PATH))
-JUNIT_CLASSES := $(addprefix tests/,$(patsubst %.java,%.class,$(JUNIT_SOURCES)))
-
-TEST_SOURCES := $(shell find ./tests -name '*.java' | $(STRIP_PATH))
-TEST_CLASSES := $(addprefix tests/,$(patsubst %.java,%.class,$(TEST_SOURCES)))
-TESTS := $(subst /,.,$(patsubst %.java,%,$(TEST_SOURCES)))
-
-buildtest: CLASSPATH = $(TEST_CLASSPATH)
-buildtest: ALL_JAVAC_FLAGS = $(JAVAC_FLAGS) -d tests -cp $(CLASSPATH)
-buildtest: nofiles $(TEST_CLASSES) compilefiles
-
-test: buildtest
-	$(JVM) $(ALL_JVM_FLAGS) -cp $(TEST_CLASSPATH) \
-	    org.junit.runner.JUnitCore $(TESTS) | tee test-log.txt
-	@echo Transcript of test run saved to test-log.txt
-
-%.rng: %.rnc
-	$(TRANG) $^ $@
-
-%.rng: %.dtd
-	$(TRANG) $^ $@
-
-%.txt: %.rng
-	$(JVM) $(ALL_JVM_FLAGS) -cp $(BUILD) \
-	       org.kohsuke.bali.Driver -ot $^ >$@
-
-# Useful for interactive runs: `make jvm` blah blah
-
-jvm:
-	@echo $(JVM) $(ALL_JVM_FLAGS) -cp $(TEST_CLASSPATH)
+test: build_src_and_tests
+	cat $(tests)
+	xargs -a $(tests) $(JAVA) $(TEST_RUN_FLAGS)
 
 
 # javadoc - Generate the Java doc from sources
 
 .PHONY: javadoc
 
-javadoc: $(all_javas)
-	echo hello
-	echo @$<
+# TODO: This doesn't seem to work. The command worked when I tried it by
+# hand, though.
+javadoc: $(all_src_files)
         echo $(JAVADOC) $(JDFLAGS) @$<
-	echo bye
 
 .PHONY: clean
 
 clean:
 	$(RM) $(OUTPUT_DIR)
-
-
 
 .PHONY: classpath
 

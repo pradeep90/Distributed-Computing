@@ -5,8 +5,8 @@
 # -d puts the generated .class files in that dir
 # -cp looks for any required .class files in those paths
 JFLAGS = -g -cp ../../classes/ -d ../../classes/ -Xlint
-RUN_FLAGS = -cp ../../classes/:/usr/share/java/junit4-4.8.2.jar
-TEST_FLAGS = -g -cp ../../classes/:/usr/share/java/junit4-4.8.2.jar -d ../../classes/ -Xlint
+RUN_FLAGS = -cp ../../classes/:../../classes/tests/:/usr/share/java/hamcrest-core-1.1.jar:/usr/share/java/junit4-4.8.2.jar
+TEST_FLAGS = -g -cp ../../classes/:/usr/share/java/junit4-4.8.2.jar -d ../../classes/tests/ -Xlint
 JC = javac
 
 
@@ -76,5 +76,6 @@ run-program:
 #
 
 clean:
-	$(RM) ../../classes/mutexlamport/*.class *~
+	# $(RM) ../../classes/mutexlamport/*.class *~
+	$(RM) ../../classes/tests/mutexlamport/*.class
 	$(RM) shared-file.txt

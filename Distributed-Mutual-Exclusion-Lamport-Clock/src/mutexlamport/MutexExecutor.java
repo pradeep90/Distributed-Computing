@@ -251,16 +251,17 @@ public class MutexExecutor {
         MutexMessage mutexMessage = new MutexMessage (message);
         clock.update ();
         // TODO(spradeep): if the message is not an ACK send an ack.
-        if (MutexMessage.isRequest (message)){
+        if (mutexMessage.isRequest ()){
             // Send ack
             TimeStamp messageTimeStamp = mutexMessage.getTimeStamp ();
             requestQueue.add (messageTimeStamp);
             sendMessage (messageTimeStamp.getProcessId (),
-                         "ACK " + messageTimeStamp.getProcessId ()
-                         + " from " + processId);
-        } else if (MutexMessage.isAck (message)){
+                         getTimeStampedMessage (
+                             "ACK " + messageTimeStamp.getProcessId ()
+                             + " from " + processId));
+        } else if (mutexMessage.isAck ()){
             replyCounter--;
-        } else if (MutexMessage.isRelease (message)){
+        } else if (mutexMessage.isRelease ()){
             boolean removed = requestQueue.remove (mutexMessage.getTimeStamp ());
         }
     }

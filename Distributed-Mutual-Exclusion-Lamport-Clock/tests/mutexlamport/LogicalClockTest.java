@@ -11,5 +11,7 @@ public class LogicalClockTest {
         clock.update ();
         assertEquals (7, clock.getTimeStamp ().getProcessId ());
         assertEquals (1, clock.getTimeStamp ().getTimeValue ());
+        clock.update (13);
+        assertEquals (14, clock.getTimeStamp ().getTimeValue ());
     }
 }

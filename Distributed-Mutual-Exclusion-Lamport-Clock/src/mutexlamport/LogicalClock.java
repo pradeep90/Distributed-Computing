@@ -40,28 +40,4 @@ public class LogicalClock {
     void setTimeStamp (int timeValue){
         this.timeStamp.setTimeValue (timeValue);
     }
-
-    /**
-     * Return the message formatted with the current TS.
-     */
-    public String getTimeStampedString (String message){
-        // Later have the processId within the Timestamp itself
-        return timeStamp + " : " + message;
-    }
-
-    /**
-     * Return processId embedded in message.
-     * 
-     * TODO(spradeep): This says message should ideally be a Class.
-     */
-    public static int extractProcessId (String message){
-        return 0;
-    }
-    
-    /**
-     * Return TimeStamp embedded in message.
-     */
-    public static int extractTimeStamp (String message){
-        return 7;
-    }
 }

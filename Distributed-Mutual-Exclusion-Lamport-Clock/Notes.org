@@ -6,5 +6,17 @@
 ** DONE Have proper DRY makefile rules for building and running the unit tests
 ** DONE ditto - http://comsci.liu.edu/~league/dist/rngzip/trunk/Makefile
 ** DONE tutorial - http://www.vogella.com/articles/JUnit/article.html
-* VVIP I'm making the .class files for the unit tests go in classes/tests/. This means I'm compiling source files and test files separately because AFAIK you can only supply one -d (output dir) during compilation.
-* I got hamcrest related NoClassDefFoundError so I added it to the classpath
+** VVIP I'm making the .class files for the unit tests go in classes/tests/. This means I'm compiling source files and test files separately because AFAIK you can only supply one -d (output dir) during compilation.
+** I got hamcrest related NoClassDefFoundError so I added it to the classpath
+* Migrate Google elisp code for dealing with Java coding.
+* Unit Tests
+* Integration Tests
+* JDEE
+* Bootstrap code
+* Have manual and script-based trigger - Get event list from a file
+* Transactions (R + W)
+** Serializability - Transaction - Read and Write with Lamport TS
+*** x on one node, y on another
+* Optimistic Concurrency Control - R and W TS with each data item
+** without replication
+** with replication

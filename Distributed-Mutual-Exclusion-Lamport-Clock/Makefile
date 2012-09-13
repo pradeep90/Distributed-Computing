@@ -97,6 +97,10 @@ build_tests: $(all_tests)
 	mkdir -p $(TEST_OUTPUT_DIR)
 	$(JAVAC) $(TEST_BUILD_FLAGS) @$<
 
+# Didn't work. I wanted it such that I didn't have to rebuild
+# everything all the time.
+# $(JAVAC) $(TEST_BUILD_FLAGS) $(TEST_PATH)/mutexlamport/AllTests.java
+
 test: build_src_and_tests
 	cat $(tests)
 	xargs -a $(tests) $(JAVA) $(TEST_RUN_FLAGS)

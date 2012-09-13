@@ -1,9 +1,12 @@
 package mutexlamport;
 
 public class TimeStamp implements Comparable<TimeStamp> {
+    public static final int EQUAL = 0;
+    public static final int AFTER = 1;
+    public static final int BEFORE = -1;
     private int timeValue;
     private int processId;
-
+        
     public TimeStamp (int timeValue, int processId){
         this.timeValue = timeValue;
         this.processId = processId;
@@ -20,14 +23,10 @@ public class TimeStamp implements Comparable<TimeStamp> {
     }
     
     /**
-     * @return -1/0/1 if this is less/equal/greater than
+     * @return BEFORE/EQUAL/AFTER if this is less/equal/greater than
      * otherTimeStamp.
      */
     public int compareTo (TimeStamp otherTimeStamp){
-        final int EQUAL = 0;
-        final int AFTER = 1;
-        final int BEFORE = -1;
-        
         if (this == otherTimeStamp){
             return EQUAL;
         }

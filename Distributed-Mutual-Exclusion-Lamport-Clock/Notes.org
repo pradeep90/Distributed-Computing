@@ -8,12 +8,20 @@
 ** DONE tutorial - http://www.vogella.com/articles/JUnit/article.html
 ** VVIP I'm making the .class files for the unit tests go in classes/tests/. This means I'm compiling source files and test files separately because AFAIK you can only supply one -d (output dir) during compilation.
 ** I got hamcrest related NoClassDefFoundError so I added it to the classpath
-* Migrate Google elisp code for dealing with Java coding.
-* Unit Tests
+* DONE Migrate Google elisp code for dealing with Java coding.
+* DONE Unit Tests
 * Integration Tests
 * JDEE
 * Bootstrap code
-* Have manual and script-based trigger - Get event list from a file
+* TODO Have manual and script-based trigger - Get event list from a file
+  CLOCK: [2012-09-13 Thu 14:42]--[2012-09-13 Thu 14:45] =>  0:03
+** DONE First, print out ALL events.
+   CLOCK: [2012-09-13 Thu 14:45]--[2012-09-13 Thu 15:04] =>  0:19
+** DONE Have a program given as input to each node consisting of
+   CLOCK: [2012-09-13 Thu 15:05]--[2012-09-13 Thu 16:22] =>  1:17
+*** Reads (which will just be dummy events) and
+*** Writes (actual file writes)
+** Write a Python script to parse the output and check for correctness
 * Transactions (R + W)
 ** Serializability - Transaction - Read and Write with Lamport TS
 *** x on one node, y on another

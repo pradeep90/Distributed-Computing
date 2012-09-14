@@ -22,16 +22,21 @@ public class MutexExecutor {
     // ExecutorService senderExecutor;
 
     static final int SOCKET_READ_TIMEOUT = 200;
+    static final int SLEEP_TIME = 500;
 
     LogicalClock clock;
     String server_hostname;
-    String FINAL_MESSAGE = "Writing to Shared memory... This is a test message.";
+    String FINAL_MESSAGE = "Writing to Shared memory... ";
     int server_port;
     int processId;
     int replyCounter;
     TimeStamp requestTimeStamp;
+    boolean isNewRequest;
+    boolean isWaitingForAcks;
     FileWriter distributedFileWriter;
+    Operation currentOperation;
     
+    List<Operation> operationList;
     List<String> allHostnames;
     List<Integer> allPorts;
 
@@ -47,6 +52,21 @@ public class MutexExecutor {
         if (argv.length == 0){
 	    System.out.println ("Format: id shared_file_name host1:port1 [host2:port2 ...]");
 	    System.exit (1);
+        }
+
+        List<Operation> operationList = new ArrayList<Operation> ();
+        try {
+            BufferedReader inputReader = new BufferedReader (
+                new InputStreamReader (System.in));
+            String currLine;
+	    while ((currLine = inputReader.readLine ()) != null){
+                System.out.println (currLine);
+                Operation operation = new Operation (currLine);
+                System.out.println (operation);
+                operationList.add (operation);
+            }
+        } catch (IOException e) {
+            e.printStackTrace ();
         }
 	
 	List<String> allHostnames = new ArrayList<String> ();
@@ -77,21 +97,24 @@ public class MutexExecutor {
             processId,
             server_hostname,
             server_port,
+            operationList,
             allHostnames,
             allPorts,
             new FileWriter (sharedFileName));
 	mutexExecutor.startExecution ();
     }
 
-    MutexExecutor (int processId,
-                   String server_hostname,
-                   int server_port,
-                   List<String> allHostnames,
-                   List<Integer> allPorts,
-                   FileWriter distributedFileWriter) {
+    public MutexExecutor (int processId,
+                          String server_hostname,
+                          int server_port,
+                          List<Operation> operationList,
+                          List<String> allHostnames,
+                          List<Integer> allPorts,
+                          FileWriter distributedFileWriter) {
+        this.processId = processId;
         this.server_hostname = server_hostname;
         this.server_port = server_port;
-        this.processId = processId;
+        this.operationList = operationList;
 	this.allHostnames = allHostnames;
 	this.allPorts = allPorts;
         numNodes = allHostnames.size ();
@@ -101,10 +124,8 @@ public class MutexExecutor {
     }
     
     public void startExecution (){
-
-        boolean isNewRequest = false;
-        boolean isWaitingForAcks = false;
-
+        isNewRequest = false;
+        isWaitingForAcks = false;
         try {
 	    serverSocket = new ServerSocket (server_port);
 
@@ -115,47 +136,26 @@ public class MutexExecutor {
 	    // senderExecutor = Executors.newFixedThreadPool(NUM_SENDER_THREADS);
 
 	    while (true){
-                Thread.sleep (1000);
+                Thread.sleep (SLEEP_TIME);
 
 	    	handleRequests ();
                 System.out.println (getTimeStampedMessage (
                     "requestQueue" + requestQueue.toString ()));
                 
                 if (!isWaitingForAcks){
-                    // TODO(spradeep): Do stuff to see whether you wanna make a new request
-                    Random randomGenerator = new Random ();
-                    isNewRequest =
-                            randomGenerator.nextInt (numNodes) == processId ? true: false;
+                    currentOperation = operationList.remove (0);
+                    isNewRequest = currentOperation.operationType
+                            == Operation.OperationType.WRITE;
                     if (!isNewRequest){
                         continue;
                     }
-                }
-
-	    	// If making a new request, send requests to all nodes
-	    	if (isNewRequest){
-                    requestTimeStamp = clock.getTimeStamp ();
-                    requestQueue.add (clock.getTimeStamp ());
-                    System.out.println (getTimeStampedMessage ("Sending request..."));
-	    	    broadcastMessage (getTimeStampedMessage ("REQUEST"));
+                    makeNewRequest ();
                     // TODO(spradeep): Should this be here?
                     clock.update ();
-	    	    isWaitingForAcks = true;
-	    	    isNewRequest = false;
-                    replyCounter = numNodes - 1;
-	    	}
-
-	    	if (isWaitingForAcks && checkAllAcksReceived () && isAtHeadOfRQ ()){
-                    isWaitingForAcks = false;
-                    System.out.println (getTimeStampedMessage (FINAL_MESSAGE));
-                    distributedFileWriter.appendToFile (
-                        getTimeStampedMessage (FINAL_MESSAGE) + "\n");
-
-	    	    // EXIT CS - Dequeue your request and send Release message to all nodes
-	    	    requestQueue.poll ();
-
-                    // Send release message with the TS of the request
-	    	    broadcastMessage (getTimeStampedMessage (requestTimeStamp,
-                                                             "RELEASE"));
+                } else if (canEnterCS ()){
+                    enterCS ();
+                    executeCS ();
+                    exitCS ();
                     clock.update ();
 	    	}
 	    }
@@ -167,6 +167,62 @@ public class MutexExecutor {
             // senderExecutor.shutdown();
         }
     }
+
+    /**
+     * Add current node's new request to its Request Queue and
+     * broadcast a Request to all peers.
+     *
+     * Update clock and set the various flags to make it wait for acks.
+     */
+    public void makeNewRequest()
+            throws UnknownHostException, IOException {
+        requestTimeStamp = clock.getTimeStamp ();
+        requestQueue.add (clock.getTimeStamp ());
+        System.out.println (getTimeStampedMessage ("Sending request..."));
+        broadcastMessage (getTimeStampedMessage ("REQUEST"));
+        isWaitingForAcks = true;
+        isNewRequest = false;
+        replyCounter = numNodes - 1;
+    }
+
+    /**
+     * Return true iff current node can enter CS.
+     */
+    public boolean canEnterCS (){
+        return checkAllAcksReceived () && isAtHeadOfRQ ();
+    }
+
+    /**
+     * Enter CS.
+     */
+    public void enterCS(){
+        isWaitingForAcks = false;
+    }
+
+    /**
+     * Execute code in CS.
+     */
+    public void executeCS (){
+        System.out.println (getTimeStampedMessage (
+            FINAL_MESSAGE + currentOperation.parameter));
+        distributedFileWriter.appendToFile (
+            getTimeStampedMessage (
+                FINAL_MESSAGE + currentOperation.parameter) + "\n");
+    }
+
+    /**
+     * Dequeue your Request and send Release message to all nodes.
+     */
+    public void exitCS () throws UnknownHostException, IOException {
+        requestQueue.poll ();
+
+        // Send release message with the TS of the request
+        System.out.println (getTimeStampedMessage (requestTimeStamp,
+                                                   "RELEASE"));
+        broadcastMessage (getTimeStampedMessage (requestTimeStamp,
+                                                 "RELEASE"));
+    }
+
 
     /**
      * @return true iff a request from this node is at the head of
@@ -255,6 +311,9 @@ public class MutexExecutor {
             // Send ack
             TimeStamp messageTimeStamp = mutexMessage.getTimeStamp ();
             requestQueue.add (messageTimeStamp);
+            System.out.println (getTimeStampedMessage (
+                "ACK " + messageTimeStamp.getProcessId ()
+                + " from " + processId));
             sendMessage (messageTimeStamp.getProcessId (),
                          getTimeStampedMessage (
                              "ACK " + messageTimeStamp.getProcessId ()

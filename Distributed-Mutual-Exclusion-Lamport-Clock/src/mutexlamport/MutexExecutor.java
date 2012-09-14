@@ -306,7 +306,6 @@ public class MutexExecutor {
     void handleMessage (String message){
         MutexMessage mutexMessage = new MutexMessage (message);
         clock.update ();
-        // TODO(spradeep): if the message is not an ACK send an ack.
         if (mutexMessage.isRequest ()){
             // Send ack
             TimeStamp messageTimeStamp = mutexMessage.getTimeStamp ();

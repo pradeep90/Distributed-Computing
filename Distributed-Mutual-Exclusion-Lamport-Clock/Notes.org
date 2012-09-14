@@ -13,7 +13,7 @@
 * Integration Tests
 * JDEE
 * Bootstrap code
-* TODO Have manual and script-based trigger - Get event list from a file
+* DONE Have manual and script-based trigger - Get event list from a file
   CLOCK: [2012-09-13 Thu 14:42]--[2012-09-13 Thu 14:45] =>  0:03
 ** DONE First, print out ALL events.
    CLOCK: [2012-09-13 Thu 14:45]--[2012-09-13 Thu 15:04] =>  0:19
@@ -21,7 +21,19 @@
    CLOCK: [2012-09-13 Thu 15:05]--[2012-09-13 Thu 16:22] =>  1:17
 *** Reads (which will just be dummy events) and
 *** Writes (actual file writes)
-** Write a Python script to parse the output and check for correctness
+** DONE Not needed - Write a Python script to parse the output and check for correctness
+** DONE Turns out I don't need the script after all. All the conditions are met by the code.
+*** DONE Test for correctness in each nodes event list - own request
+**** DONE between request and write, there should be N - 1 ACKs.
+***** Checked by the code
+**** DONE In the event just before the write, node should be at the head its queue.
+***** Checked by the code
+**** DONE There are 3 releases after the write without another request from node
+***** cos it's a broadcast
+**** DONE In the request queue after the write, the write request has been removed.
+*** DONE Other people's requests
+**** DONE received request => request is now in the request queue
+**** DONE received release => request is no longer in the request queue
 * Transactions (R + W)
 ** Serializability - Transaction - Read and Write with Lamport TS
 *** x on one node, y on another

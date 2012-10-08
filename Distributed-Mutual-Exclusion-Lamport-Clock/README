@@ -19,4 +19,4 @@
   cd bin/
   ./run-mutex-program.bash
 
-+ The common file is by default "shared-file.bash". It is passed in as a parameter.
++ The common file is by default "shared-file.txt". It is passed in as a parameter.

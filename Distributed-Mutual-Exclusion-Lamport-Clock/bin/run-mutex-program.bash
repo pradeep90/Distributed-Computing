@@ -13,5 +13,5 @@ java -cp ../classes/ mutexlamport.MutexExecutor 2 shared-file.txt localhost:3633
 
 # java -cp ../classes/ mutexlamport.MutexMessage $@
 
-sleep 10
+sleep 5
 killall java

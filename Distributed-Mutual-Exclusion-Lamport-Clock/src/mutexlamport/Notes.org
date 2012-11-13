@@ -1,48 +1,75 @@
-				Notes
+		Lamport Clock Mutual Exclusion - Notes
 
 * Performance
   CLOCK: [2012-08-29 Wed 17:56]--[2012-08-29 Wed 19:22] =>  1:26
 * Textbook - Distributed Mutual Exclusion - An algo using multicast and logical clocks - pg 427
 * Aim - Implement mutual exclusion among N peer processes using multicast and logical clocks.
-* Basic idea - processes that require entry to a critical section multicast a request message, and can only enter it when all the other processes have acknowledged this request.
-* Handling conflicts
-** A sends a request with TS t1. B sends a request with TS t2 > t1.
-** VVIP The key question is - Did A send ack for B's request before (as per global clock) it sent its own request?
-*** If it did, then it's TS would become t3 > t2 and so it will go after B.
-*** If not, then it will surely go into the CS before B cos A's request will have TS < B's request's TS.
-** The conflict would only occur when two processes (A and B) send requests at the same time (ie. before they receive the other's request)
-** VVIP FIFO nature - 
-*** If A sent ack (ackAtoB) for B's request before it started sending out its own request, then because of the logical clock incrementing, A's request would have a timestamp greater than B's request.
-**** Here it does not matter if the channel is FIFO or not. Even if A's request (which was sent after the ackAtoB) reaches B earlier, it will be queued behind B's request on B's local queue.
-*** If A sends an ack ackAtoB AFTER sending its own request, with TS t3 > t2 > t1, then the FIFO nature matters.
-**** If ackAtoB reaches B before A's request, t3 > t2 => B will go ahead and enter the CS cos it is at the head of the request queue
-* Le Algo
-  http://www.cs.fsu.edu/~xyuan/cop5611/lecture8.html
-** Request
-*** Si will send REQUEST (TSi, i) to all other nodes and put its request in its local RQ
-*** When Sj receives REQUEST (TSi, i), it will put it in its local RQ and return a timestamped REPLY/ACK
-** Si enters CS only when
-*** L1 - Si has received a message with TS > (TSi, i) from all other processes
-**** TODO Why not just check for an ACK? This seems like a bit of an optimization to me. After all, the ACK will eventually come and is guaranteed to be > (TSi, i)
-**** Maybe try out both strategies
-*** L2 - Si is at the head of its RQ
-** Release
-*** Si will remove its request from the head of RQ and send a timestamped RELEASE message to all other nodes
-*** On receiving the RELEASE message, Sj will remove Si's request from RQj
-**** Note: Si's request may not be at the head of RQj cos Sj might not yet have received the RELEASE message of the last process that exited the CS.
-* TODO Correctness
-** Assume, to the contrary, that Si and Sj are both entering the CS right now.
-** Then, they both satisfy L1 and L2.
-** To prove: Si and Sj received messages from all other processes but that Si's REQUEST is not at the head of its queue. Or for Sj. Or both.
-** WOLOG, TSi < TSj (by TS and/or by process number) at the time when Si sent out its REQUEST.
-** Focus on Sj.
-** Assume FIFO ordering of messages.
-** TODO By L1, Si has received an ACK/message from Sj with TS > TSi. So, Sj received Si's REQUEST. Therefore, in RQj, Si's REQUEST would be ahead of Sj's REQUEST. But, by L2, Sj's REQUEST is at the head of RQj. Contradiction.
-*** TODO I believe FIFO order is assumed somewhere here.
-** If not FIFO ordering
-*** Si -> Sj - Si's REQUEST and Si's ACK for Sj's REQUEST
-*** Si <- Sj - Sj's REQUEST and Sj's ACK for Si's REQUEST
-** Contradiction.
+** Basic idea - processes that require entry to a critical section multicast a request message, and can only enter it when all the other processes have acknowledged this request.
+** Handling conflicts
+*** A sends a request with TS t1. B sends a request with TS t2 > t1.
+*** VVIP The key question is - Did A send ack for B's request before (as per global clock) it sent its own request?
+**** If it did, then it's TS would become t3 > t2 and so it will go after B.
+**** If not, then it will surely go into the CS before B cos A's request will have TS < B's request's TS.
+*** The conflict would only occur when two processes (A and B) send requests at the same time (ie. before they receive the other's request)
+*** VVIP FIFO nature - 
+**** If A sent ack (ackAtoB) for B's request before it started sending out its own request, then because of the logical clock incrementing, A's request would have a timestamp greater than B's request.
+***** Here it does not matter if the channel is FIFO or not. Even if A's request (which was sent after the ackAtoB) reaches B earlier, it will be queued behind B's request on B's local queue.
+**** If A sends an ack ackAtoB AFTER sending its own request, with TS t3 > t2 > t1, then the FIFO nature matters.
+***** If ackAtoB reaches B before A's request, t3 > t2 => B will go ahead and enter the CS cos it is at the head of the request queue
+** Le Algo
+   http://www.cs.fsu.edu/~xyuan/cop5611/lecture8.html
+*** Request
+**** Si will send REQUEST (TSi, i) to all other nodes and put its request in its local RQ
+**** When Sj receives REQUEST (TSi, i), it will put it in its local RQ and return a timestamped REPLY/ACK
+*** Si enters CS only when
+**** L1 - Si has received a message with TS > (TSi, i) from all other processes
+***** TODO Why not just check for an ACK? This seems like a bit of an optimization to me. After all, the ACK will eventually come and is guaranteed to be > (TSi, i)
+***** Maybe try out both strategies
+**** L2 - Si is at the head of its RQ
+*** Release
+**** Si will remove its request from the head of RQ and send a timestamped RELEASE message to all other nodes
+**** On receiving the RELEASE message, Sj will remove Si's request from RQj
+***** Note: Si's request may not be at the head of RQj cos Sj might not yet have received the RELEASE message of the last process that exited the CS.
+** TODO Correctness
+*** Assume, to the contrary, that Si and Sj are both entering the CS right now.
+*** Then, they both satisfy L1 and L2.
+*** To prove: Si and Sj received messages from all other processes but that Si's REQUEST is not at the head of its queue. Or for Sj. Or both.
+*** WOLOG, TSi < TSj (by TS and/or by process number) at the time when Si sent out its REQUEST.
+*** Focus on Sj.
+*** Assume FIFO ordering of messages.
+*** TODO By L1, Si has received an ACK/message from Sj with TS > TSi. So, Sj received Si's REQUEST. Therefore, in RQj, Si's REQUEST would be ahead of Sj's REQUEST. But, by L2, Sj's REQUEST is at the head of RQj. Contradiction.
+**** TODO I believe FIFO order is assumed somewhere here.
+*** If not FIFO ordering
+**** Si -> Sj - Si's REQUEST and Si's ACK for Sj's REQUEST
+**** Si <- Sj - Sj's REQUEST and Sj's ACK for Si's REQUEST
+*** Contradiction.
+** DONE What's left
+*** DONE Implement Timestamp
+*** DONE Getting list of host:port pairs on the command line
+    CLOCK: [2012-08-30 Thu 16:09]--[2012-08-30 Thu 16:28] =>  0:19
+*** DONE Check whether handleRequests works
+*** DONE handleRequests
+**** If message is a Request, add it to RQ and send an Ack
+**** If message is a Release (req), dequeue (req)
+*** DONE sendRequestToAll
+**** Loop over the list of peers and send requests with timestamp
+**** Join all the threads - Block
+*** DONE checkAllAcksReceived
+**** Loop over the boolean array and check
+**** DONE Nah. I'm going with a counter.
+*** DONE isAtHeadOfRQ
+**** trivial
+*** DONE sendReleaseMessages
+**** same as sendRequestToAll
+**** Block
+** Gotchas
+*** All the trouble with make not giving me up-to-date stuff and the `package` hassle
+*** Had to override equals (Object) in TimeStamp so that it can be used to remove () stuff in the PriorityQueue.
+*** Simply swapped TS and PID in the timestamp message (priding myself on the fact that my code was so DRY and how I only had to change it in one place)
+**** Ha ha!
+**** Cascade of errors
+**** VVIP Lesson: Unit Tests are essential. I wouldn't have any of these needless and enthusiasm-sapping errors if I'd implemented Unit Tests
+*** getTimeStamp in LogicalClock had to return a copy of the TimeStamp instead of the TimeStamp itself because we don't want the returned value (reference, actually) to change when the clock is updated.
 * Implementation
 ** DONE Sender (Client)
    CLOCK: [2012-08-29 Wed 20:45]--[2012-08-29 Wed 22:21] =>  1:36
@@ -63,30 +90,6 @@
    CLOCK: [2012-08-30 Thu 01:45]--[2012-08-30 Thu 02:01] =>  0:16
    CLOCK: [2012-08-30 Thu 00:35]--[2012-08-30 Thu 01:45] =>  1:10
    CLOCK: [2012-08-30 Thu 00:22]--[2012-08-30 Thu 00:35] =>  0:13
-* DONE What's left
-** DONE Implement Timestamp
-** DONE Getting list of host:port pairs on the command line
-   CLOCK: [2012-08-30 Thu 16:09]--[2012-08-30 Thu 16:28] =>  0:19
-** DONE Check whether handleRequests works
-** DONE handleRequests
-*** If message is a Request, add it to RQ and send an Ack
-*** If message is a Release (req), dequeue (req)
-** DONE sendRequestToAll
-*** Loop over the list of peers and send requests with timestamp
-*** Join all the threads - Block
-** DONE checkAllAcksReceived
-*** Loop over the boolean array and check
-*** DONE Nah. I'm going with a counter.
-** DONE isAtHeadOfRQ
-*** trivial
-** DONE sendReleaseMessages
-*** same as sendRequestToAll
-*** Block
-* Gotchas
-** All the trouble with make not giving me up-to-date stuff and the `package` hassle
-** Had to override equals (Object) in TimeStamp so that it can be used to remove () stuff in the PriorityQueue.
-** Simply swapped TS and PID in the timestamp message (priding myself on the fact that my code was so DRY and how I only had to change it in one place)
-*** Ha ha!
-*** Cascade of errors
-*** VVIP Lesson: Unit Tests are essential. I wouldn't have any of these needless and enthusiasm-sapping errors if I'd implemented Unit Tests
-** getTimeStamp in LogicalClock had to return a copy of the TimeStamp instead of the TimeStamp itself because we don't want the returned value (reference, actually) to change when the clock is updated.
+** Subclass MutexMessage - Switch Statements smell
+   CLOCK: [2012-11-13 Tue 17:11]--[2012-11-13 Tue 17:17] =>  0:06
+

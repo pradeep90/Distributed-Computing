@@ -22,7 +22,7 @@ public class MutexExecutor {
     // ExecutorService senderExecutor;
 
     static final int SOCKET_READ_TIMEOUT = 200;
-    static final int SLEEP_TIME = 500;
+    static final int SLEEP_TIME = 1;
 
     LogicalClock clock;
     String server_hostname;
@@ -86,6 +86,8 @@ public class MutexExecutor {
         int server_port;
         
         for (String hostPortPair : hostPorts){
+            System.out.println ("hostPortPair");
+            System.out.println (hostPortPair);
             allHostnames.add (hostPortPair.split (":")[0]);
             allPorts.add (Integer.parseInt (hostPortPair.split (":")[1]));
         }
@@ -141,8 +143,14 @@ public class MutexExecutor {
 	    	handleRequests ();
                 System.out.println (getTimeStampedMessage (
                     "requestQueue" + requestQueue.toString ()));
-                
+
+                if (allOperationsOver()){
+                    continue;
+                }
+
                 if (!isWaitingForAcks){
+                    System.out.println ("operationList");
+                    printTimeStampedMessage (operationList.toString ());
                     currentOperation = operationList.remove (0);
                     isNewRequest = currentOperation.operationType
                             == Operation.OperationType.WRITE;
@@ -186,6 +194,14 @@ public class MutexExecutor {
     }
 
     /**
+     * @return true iff operationList is empty.
+     */
+    public boolean allOperationsOver(){
+        return !isWaitingForAcks && operationList.isEmpty();
+    }
+
+
+    /**
      * Return true iff current node can enter CS.
      */
     public boolean canEnterCS (){
@@ -222,7 +238,6 @@ public class MutexExecutor {
         broadcastMessage (getTimeStampedMessage (requestTimeStamp,
                                                  "RELEASE"));
     }
-
 
     /**
      * @return true iff a request from this node is at the head of
@@ -365,6 +380,10 @@ public class MutexExecutor {
 
     public void sendAck (String message){
         
+    }
+
+    public void printTimeStampedMessage(String message){
+        System.out.println (getTimeStampedMessage (message));
     }
 
     public String getTimeStampedMessage (String message){

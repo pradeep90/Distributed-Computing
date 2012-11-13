@@ -13,6 +13,10 @@ public class MutexMessage {
             "^(REQUEST)$";
     private static final String RELEASE_REGEX =
             "^(RELEASE)$";
+    private static final String INIT_REQUEST_REGEX =
+            "^(INIT) .*$";
+    private static final String INIT_RESPONSE_REGEX =
+            "^(GO_AHEAD_INIT)$";
     
     public MutexMessage (TimeStamp timeStamp, String message){
         this.timeStamp = timeStamp;
@@ -47,7 +51,7 @@ public class MutexMessage {
     }
     
     /**
-     * Return String equivalent of MutexMessage.
+     * @return String equivalent of MutexMessage.
      */
     public String toString (){
         return timeStamp + " : " + message;
@@ -63,6 +67,14 @@ public class MutexMessage {
 
     public boolean isRequest (){
         return this.message.matches (REQUEST_REGEX);
+    }
+
+    public boolean isInitRequest(){
+        return message.matches(INIT_REQUEST_REGEX);
+    }
+    
+    public boolean isInitResponse(){
+        return message.matches(INIT_RESPONSE_REGEX);
     }
 }
     

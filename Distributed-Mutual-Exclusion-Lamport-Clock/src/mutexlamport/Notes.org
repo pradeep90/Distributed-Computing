@@ -92,4 +92,3 @@
    CLOCK: [2012-08-30 Thu 00:22]--[2012-08-30 Thu 00:35] =>  0:13
 ** Subclass MutexMessage - Switch Statements smell
    CLOCK: [2012-11-13 Tue 17:11]--[2012-11-13 Tue 17:17] =>  0:06
-

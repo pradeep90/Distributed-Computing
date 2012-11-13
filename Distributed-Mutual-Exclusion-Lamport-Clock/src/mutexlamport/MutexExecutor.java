@@ -4,7 +4,10 @@ import java.io.*;
 import java.lang.*;
 import java.net.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.PriorityQueue;
 import java.util.Random;
 import java.util.concurrent.Callable;
@@ -15,6 +18,14 @@ import java.util.concurrent.Future;
 import sockets.ReceiverCallable;
 import sockets.SenderThread;
 
+/** 
+ * Class to write to a Shared File using Lamport Clock for Mutual
+ * Exclusion.
+ *
+ * For Bootstrapping, one of the peers is initially the Initializing
+ * Server which waits for all the nodes to start before giving the Go
+ * Ahead.
+ */
 public class MutexExecutor {
 
     ServerSocket serverSocket;
@@ -22,24 +33,28 @@ public class MutexExecutor {
     // ExecutorService senderExecutor;
 
     static final int SOCKET_READ_TIMEOUT = 200;
-    static final int SLEEP_TIME = 1;
+    static final int SLEEP_TIME = 50;
 
     LogicalClock clock;
-    String server_hostname;
+    String selfHostname;
+    int selfPort;
     String FINAL_MESSAGE = "Writing to Shared memory... ";
-    int server_port;
     int processId;
     int replyCounter;
     TimeStamp requestTimeStamp;
     boolean isNewRequest;
     boolean isWaitingForAcks;
+    boolean receivedGoAhead;
+    String initServerHost;
+    int initServerPort;
     FileWriter distributedFileWriter;
     Operation currentOperation;
-    
+
     List<Operation> operationList;
     List<String> allHostnames;
     List<Integer> allPorts;
 
+    Set<String> initNodes;
     PriorityQueue<TimeStamp> requestQueue;
     
     static final int NUM_SERVER_THREADS = 3;
@@ -48,43 +63,66 @@ public class MutexExecutor {
 
     public int numNodes;
 
-    public static void main(String[] argv) {
-        if (argv.length == 0){
-	    System.out.println ("Format: id shared_file_name host1:port1 [host2:port2 ...]");
-	    System.exit (1);
-        }
-
+    /**
+     * Read a list of operations from inputReader.
+     */
+    public static List<Operation> getOperationListFromReader(BufferedReader inputReader)
+            throws IOException{
         List<Operation> operationList = new ArrayList<Operation> ();
+        String currLine;
+        while ((currLine = inputReader.readLine ()) != null){
+            System.out.println (currLine);
+            Operation operation = new Operation (currLine);
+            System.out.println (operation);
+            operationList.add (operation);
+        }
+        return operationList;
+    }
+
+    /**
+     * Read list of operations from stdin.
+     */
+    public void getOperationList(){
+        operationList = new ArrayList<Operation>();
         try {
             BufferedReader inputReader = new BufferedReader (
                 new InputStreamReader (System.in));
-            String currLine;
-	    while ((currLine = inputReader.readLine ()) != null){
-                System.out.println (currLine);
-                Operation operation = new Operation (currLine);
-                System.out.println (operation);
-                operationList.add (operation);
-            }
+            operationList = getOperationListFromReader(inputReader);
         } catch (IOException e) {
             e.printStackTrace ();
         }
-	
+    }
+
+    public static void main(String[] argv) {
+        if (argv.length == 0){
+	    System.out.println ("Format: id shared_file_name init_server_host:init_server_port host1:port1 [host2:port2 ...]");
+	    System.exit (1);
+        }
+
+        List<String> hostPorts = new ArrayList<String>(Arrays.<String>asList(argv));
+        System.out.println ("hostPorts");
+        System.out.println (hostPorts);
+        
+	int processId = Integer.parseInt(hostPorts.remove(0));
+        String sharedFileName = hostPorts.remove (0);
+
+	MutexExecutor mutexExecutor = new MutexExecutor(processId, sharedFileName, hostPorts);
+        mutexExecutor.bootstrap();
+	mutexExecutor.startExecution ();
+    }
+
+    public MutexExecutor(int processId, String sharedFileName, List<String> hostPorts){
+        this.processId = processId;
+        System.out.println ("Writing output to " + sharedFileName);
+
+        
+        String initServerHostPort = hostPorts.remove(0);
+        initServerHost = initServerHostPort.split (":")[0];
+        initServerPort = Integer.parseInt(initServerHostPort.split (":")[1]);
+
 	List<String> allHostnames = new ArrayList<String> ();
 	List<Integer> allPorts = new ArrayList<Integer> ();
 
-        List<String> hostPorts = new ArrayList<String> ();
-        for (String arg : argv){
-            hostPorts.add (arg);
-        }
-
-        // The first arg is the processId
-	int processId = Integer.parseInt (hostPorts.remove (0));
-        String sharedFileName = hostPorts.remove (0);
-        System.out.println ("Writing output to " + sharedFileName);
-
-        String server_hostname;
-        int server_port;
-        
         for (String hostPortPair : hostPorts){
             System.out.println ("hostPortPair");
             System.out.println (hostPortPair);
@@ -92,51 +130,75 @@ public class MutexExecutor {
             allPorts.add (Integer.parseInt (hostPortPair.split (":")[1]));
         }
 
-        server_hostname = allHostnames.get (processId);
-        server_port = allPorts.get (processId);
+        String selfHostname = allHostnames.get (processId);
+        int selfPort = allPorts.get (processId);
 
-	MutexExecutor mutexExecutor = new MutexExecutor (
+        initValues(
             processId,
-            server_hostname,
-            server_port,
-            operationList,
+            selfHostname,
+            selfPort,
             allHostnames,
             allPorts,
             new FileWriter (sharedFileName));
-	mutexExecutor.startExecution ();
     }
 
-    public MutexExecutor (int processId,
-                          String server_hostname,
-                          int server_port,
-                          List<Operation> operationList,
-                          List<String> allHostnames,
-                          List<Integer> allPorts,
-                          FileWriter distributedFileWriter) {
+    public void initValues (int processId,
+                            String selfHostname,
+                            int selfPort,
+                            // List<Operation> operationList,
+                            List<String> allHostnames,
+                            List<Integer> allPorts,
+                            FileWriter distributedFileWriter) {
         this.processId = processId;
-        this.server_hostname = server_hostname;
-        this.server_port = server_port;
-        this.operationList = operationList;
+        this.selfHostname = selfHostname;
+        this.selfPort = selfPort;
+        // this.operationList = operationList;
 	this.allHostnames = allHostnames;
 	this.allPorts = allPorts;
         numNodes = allHostnames.size ();
         clock = new LogicalClock (this.processId);
         requestQueue = new PriorityQueue<TimeStamp>();
         this.distributedFileWriter = distributedFileWriter;
+
+        initNodes = new HashSet<String>();
+
+        getOperationList();
+
+        try {
+            serverSocket = new ServerSocket (selfPort);
+            // Pool of threads to which receiver jobs can be submitted.
+            receiverExecutor = Executors.newFixedThreadPool(NUM_SERVER_THREADS);
+            // // Pool of threads to which sender jobs can be submitted.
+            // senderExecutor = Executors.newFixedThreadPool(NUM_SENDER_THREADS);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Bootstrap by sending messages to a centralized init server
+     * until it gives you the go-ahead.
+     */
+    public void bootstrap(){
+        receivedGoAhead = false;
+        
+        try {
+            while(!receivedGoAhead){
+                sendInitRequest();
+                Thread.sleep (SLEEP_TIME);
+                handleRequests();
+            }
+        } catch (InterruptedException e) {
+	    System.out.println ("Error while trying for mutual exclusion:"
+				+ e.toString ());
+            e.printStackTrace ();
+        }
     }
     
     public void startExecution (){
         isNewRequest = false;
         isWaitingForAcks = false;
         try {
-	    serverSocket = new ServerSocket (server_port);
-
-	    // Pool of threads to which receiver jobs can be submitted.
-	    receiverExecutor = Executors.newFixedThreadPool(NUM_SERVER_THREADS);
-
-	    // // Pool of threads to which sender jobs can be submitted.
-	    // senderExecutor = Executors.newFixedThreadPool(NUM_SENDER_THREADS);
-
 	    while (true){
                 Thread.sleep (SLEEP_TIME);
 
@@ -253,10 +315,16 @@ public class MutexExecutor {
     boolean checkAllAcksReceived (){
         return replyCounter == 0;
     }
-    
-    // MutexExecutor (String givenFilename){
 
-    // }
+    /**
+     * Send INIT request to the Init Server.
+     */
+    public void sendInitRequest(){
+        sendMessage(initServerHost,
+                    initServerPort,
+                    getTimeStampedMessage("INIT" + " " + selfHostname + ":" + selfPort));
+    }
+
 
     /** 
      * Check for incoming Request/Release messages and queue/dequeue
@@ -336,6 +404,26 @@ public class MutexExecutor {
             replyCounter--;
         } else if (mutexMessage.isRelease ()){
             boolean removed = requestQueue.remove (mutexMessage.getTimeStamp ());
+        } else if (mutexMessage.isInitRequest()) {
+            if (initNodes.size() == numNodes){
+                return;
+            }
+
+            initNodes.add(mutexMessage.getMessage().split(" ")[1]);
+            if (initNodes.size() == numNodes){
+                try {
+                    broadcastMessage(getTimeStampedMessage("GO_AHEAD_INIT"));
+                    // Note: You need to send a message to yourself as well
+                    sendMessage(selfHostname, selfPort,
+                                getTimeStampedMessage("GO_AHEAD_INIT"));
+                } catch (UnknownHostException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        } else if (mutexMessage.isInitResponse()){
+            receivedGoAhead = true;
         }
     }
     
@@ -349,6 +437,17 @@ public class MutexExecutor {
             senderThread.join ();
         }
         catch (Exception e) {
+            System.out.println("sendMessage error: " + e.toString());
+        }
+    }
+
+    /**
+     * Send message to node with host:port.
+     */
+    void sendMessage(String host, int port, String message){
+        try {
+            sendMessage (new Socket(host, port), message);
+        } catch (Exception e) {
             System.out.println("sendMessage error: " + e.toString());
         }
     }

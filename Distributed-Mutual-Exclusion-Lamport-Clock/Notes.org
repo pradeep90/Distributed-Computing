@@ -34,6 +34,13 @@
 **** DONE received request => request is now in the request queue
 **** DONE received release => request is no longer in the request queue
 * Bootstrap code - Centralized server
+** DONE Refactor the pre-startExecution code
+   CLOCK: [2012-11-14 Wed 00:30]--[2012-11-14 Wed 00:55] =>  0:25
+   CLOCK: [2012-11-13 Tue 20:02]--[2012-11-13 Tue 21:09] =>  1:07
+** DONE Bootstrap server
+   CLOCK: [2012-11-14 Wed 01:51]--[2012-11-14 Wed 02:04] =>  0:13
+   CLOCK: [2012-11-14 Wed 01:09]--[2012-11-14 Wed 01:51] =>  0:42
+** TODO Get list of peers, etc. from the Bootstrap server wonly.
 * Transactions (R + W)
 ** Serializability - Transaction - Read and Write with Lamport TS
 *** x on one node, y on another

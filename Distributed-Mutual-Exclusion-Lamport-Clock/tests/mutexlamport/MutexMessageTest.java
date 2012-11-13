@@ -12,10 +12,14 @@ public class MutexMessageTest {
     String requestString = "PID 31 TS 2937 : [ REQUEST ]";
     String releaseString = "PID 44 TS 9730 : [ RELEASE ]";
     String ackString = "PID 44 TS 9730 : [ ACK 93 from 537 ]";
+    String initRequestString = "PID 0 TS 51 : [ INIT localhost:36330 ]";
+    String initResponseString = "PID 0 TS 51 : [ GO_AHEAD_INIT ]";
 
     MutexMessage releaseMessage = new MutexMessage (releaseString);
     MutexMessage requestMessage = new MutexMessage (requestString);
     MutexMessage ackMessage = new MutexMessage (ackString);
+    MutexMessage initRequestMessage = new MutexMessage(initRequestString);
+    MutexMessage initResponseMessage = new MutexMessage(initResponseString);
 
     @Before
     public void setUp () {
@@ -69,5 +73,30 @@ public class MutexMessageTest {
         assertTrue ("requestMessage.isRequest ()", requestMessage.isRequest ());
         assertFalse ("releaseMessage.isRequest ()", releaseMessage.isRequest ());
         assertFalse ("ackMessage.isRequest ()", ackMessage.isRequest ());
+    }
+
+    /**
+     * Test method for {@link MutexMessage#isInitRequest()}.
+     */
+    @Test
+    public final void testIsInitRequest (){
+        assertFalse ("requestMessage.isInitRequest ()", requestMessage.isInitRequest ());
+        assertFalse ("releaseMessage.isInitRequest ()", releaseMessage.isInitRequest ());
+        assertFalse ("ackMessage.isInitRequest ()", ackMessage.isInitRequest ());
+        assertTrue("initRequestMessage.isInitRequest ()", initRequestMessage.isInitRequest());
+    }
+
+    /**
+     * Test method for {@link MutexMessage#isInitResponse()}.
+     */
+    @Test
+    public final void testIsInitResponse (){
+        assertFalse("requestMessage.isInitResponse ()", requestMessage.isInitResponse ());
+        assertFalse("releaseMessage.isInitResponse ()", releaseMessage.isInitResponse ());
+        assertFalse("ackMessage.isInitResponse ()", ackMessage.isInitResponse ());
+        assertFalse("initRequestMessage.isInitResponse ()",
+                    initRequestMessage.isInitResponse());
+        assertTrue("initResponseMessage.isInitResponse ()",
+                   initResponseMessage.isInitResponse());
     }
 }

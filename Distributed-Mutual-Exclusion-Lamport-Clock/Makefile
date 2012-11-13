@@ -81,6 +81,7 @@ compile: $(all_src_files)
 .PHONY: $(all_src_files) $(all_tests)
 
 $(all_src_files):
+	$(MKDIR) $(TEST_OUTPUT_DIR)
 	$(FIND) $(SOURCE_DIR) -name '*.java' > $@
 
 # Building Unit Tests
@@ -94,7 +95,6 @@ $(all_tests):
 	$(SED) -e 's:^tests/::' -e 's:\.java::' -e 's:/:.:g' $@ > $(tests)
 
 build_tests: $(all_tests)
-	mkdir -p $(TEST_OUTPUT_DIR)
 	$(JAVAC) $(TEST_BUILD_FLAGS) @$<
 
 # Didn't work. I wanted it such that I didn't have to rebuild
@@ -113,6 +113,9 @@ test: build_src_and_tests
 # hand, though.
 javadoc: $(all_src_files)
         echo $(JAVADOC) $(JDFLAGS) @$<
+
+execute: compile
+	cd bin/ && ./run-mutex-program.bash
 
 .PHONY: clean
 

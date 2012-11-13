@@ -12,7 +12,6 @@
 * DONE Unit Tests
 * Integration Tests
 * JDEE
-* Bootstrap code
 * DONE Have manual and script-based trigger - Get event list from a file
   CLOCK: [2012-09-13 Thu 14:42]--[2012-09-13 Thu 14:45] =>  0:03
 ** DONE First, print out ALL events.
@@ -34,6 +33,7 @@
 *** DONE Other people's requests
 **** DONE received request => request is now in the request queue
 **** DONE received release => request is no longer in the request queue
+* Bootstrap code - Centralized server
 * Transactions (R + W)
 ** Serializability - Transaction - Read and Write with Lamport TS
 *** x on one node, y on another

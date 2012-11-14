@@ -24,6 +24,8 @@ public class Operation {
 
     public OperationType operationType;
     public String parameter;
+
+    public Operation(){}
     
     /**
      * operationString should be of the form "(R|W) parameter".

@@ -115,7 +115,8 @@ javadoc: $(all_src_files)
         echo $(JAVADOC) $(JDFLAGS) @$<
 
 execute: compile
-	cd bin/ && ./run-mutex-program.bash
+	# cd bin/ && ./run-mutex-program.bash
+	cd bin/ && ./run-pessi-program.bash
 
 .PHONY: clean
 

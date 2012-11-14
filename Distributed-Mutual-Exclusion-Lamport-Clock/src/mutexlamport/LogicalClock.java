@@ -4,7 +4,7 @@ import mutexlamport.TimeStamp;
 public class LogicalClock {
     private TimeStamp timeStamp;
     
-    LogicalClock (int processId){
+    public LogicalClock (int processId){
         timeStamp = new TimeStamp (0, processId);
     }
 
@@ -34,11 +34,11 @@ public class LogicalClock {
      * Must send a copy and not the timestamp itself because we do not
      * want it to be modified later when the clock is updated.
      */ 
-    TimeStamp getTimeStamp (){
+    public TimeStamp getTimeStamp (){
         return new TimeStamp (timeStamp);
     }
 
-    void setTimeStamp (int timeValue){
+    public void setTimeStamp (int timeValue){
         this.timeStamp.setTimeValue (timeValue);
     }
 }

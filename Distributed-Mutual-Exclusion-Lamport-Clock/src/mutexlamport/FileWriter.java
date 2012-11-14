@@ -34,7 +34,7 @@ public class FileWriter {
         }
     }
 
-    FileWriter (String givenFilename){
+    public FileWriter (String givenFilename){
         filename = givenFilename;
     }
 

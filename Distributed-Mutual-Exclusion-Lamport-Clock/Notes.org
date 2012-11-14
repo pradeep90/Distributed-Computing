@@ -33,17 +33,23 @@
 *** DONE Other people's requests
 **** DONE received request => request is now in the request queue
 **** DONE received release => request is no longer in the request queue
-* Bootstrap code - Centralized server
+* DONE Bootstrap code - Centralized server
 ** DONE Refactor the pre-startExecution code
    CLOCK: [2012-11-14 Wed 00:30]--[2012-11-14 Wed 00:55] =>  0:25
    CLOCK: [2012-11-13 Tue 20:02]--[2012-11-13 Tue 21:09] =>  1:07
 ** DONE Bootstrap server
    CLOCK: [2012-11-14 Wed 01:51]--[2012-11-14 Wed 02:04] =>  0:13
    CLOCK: [2012-11-14 Wed 01:09]--[2012-11-14 Wed 01:51] =>  0:42
-** TODO Get list of peers, etc. from the Bootstrap server wonly.
+** Get list of peers, etc. from the Bootstrap server wonly.
 * Transactions (R + W)
 ** Serializability - Transaction - Read and Write with Lamport TS
+*** Data Item
+    CLOCK: [2012-11-14 Wed 17:37]--[2012-11-14 Wed 17:49] =>  0:12
 *** x on one node, y on another
+*** DONE List of (Transaction ID, Operation) as input
+    CLOCK: [2012-11-14 Wed 19:12]--[2012-11-14 Wed 19:56] =>  0:44
+*** In every iteration of your while loop, keep trying to execute the operation
+*** Wait for the Ack after each operation
 * Optimistic Concurrency Control - R and W TS with each data item
 ** without replication
 ** with replication

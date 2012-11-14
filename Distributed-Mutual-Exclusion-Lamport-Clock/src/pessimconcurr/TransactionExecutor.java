@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.HashMap;
 import java.util.PriorityQueue;
 import java.util.Random;
 import java.util.concurrent.Callable;
@@ -48,7 +49,7 @@ public class TransactionExecutor {
     int replyCounter;
     TimeStamp requestTimeStamp;
     boolean isNewRequest;
-    boolean isWaitingForAcks;
+    boolean isWaitingForAck;
     boolean receivedGoAhead;
     String initServerHost;
     int initServerPort;
@@ -204,7 +205,11 @@ public class TransactionExecutor {
     
     public void startExecution (){
         isNewRequest = false;
-        isWaitingForAcks = false;
+        isWaitingForAck = false;
+
+        HashMap<Integer, TimeStamp> transactionTimeStampHash =
+                new HashMap<Integer, TimeStamp>();
+        
         try {
 	    while (true){
                 Thread.sleep (SLEEP_TIME);
@@ -217,24 +222,26 @@ public class TransactionExecutor {
                     continue;
                 }
 
-                if (!isWaitingForAcks){
+                if (!isWaitingForAck){
                     System.out.println ("transactionOperationList");
                     printTimeStampedMessage (transactionOperationList.toString ());
                     currentTransactionOperation = transactionOperationList.remove (0);
-                    isNewRequest = currentTransactionOperation.operationType
-                            == Operation.OperationType.WRITE;
-                    if (!isNewRequest){
-                        continue;
+
+                    if (!transactionTimeStampHash.containsKey(
+                            currentTransactionOperation.transactionId)){
+                        transactionTimeStampHash.put(
+                            currentTransactionOperation.transactionId,
+                            clock.getTimeStamp());
                     }
-                    makeNewRequest ();
+                    currentTransactionOperation.transactionTimeStamp =
+                            transactionTimeStampHash.get(
+                                currentTransactionOperation.transactionId);
+
+                    // sendOperation(currentTransactionOperation);
+
                     // TODO(spradeep): Should this be here?
                     clock.update ();
-                } else if (canEnterCS ()){
-                    enterCS ();
-                    executeCS ();
-                    exitCS ();
-                    clock.update ();
-	    	}
+                }
 	    }
 	} catch (Exception e) {
 	    System.out.println ("Error while trying for mutual exclusion:"
@@ -246,81 +253,10 @@ public class TransactionExecutor {
     }
 
     /**
-     * Add current node's new request to its Request Queue and
-     * broadcast a Request to all peers.
-     *
-     * Update clock (??) and set the various flags to make it wait for acks.
-     */
-    public void makeNewRequest()
-            throws UnknownHostException, IOException {
-        requestTimeStamp = clock.getTimeStamp ();
-        requestQueue.add (clock.getTimeStamp ());
-        System.out.println (getTimeStampedMessage ("Sending request..."));
-        broadcastMessage (getTimeStampedMessage ("REQUEST"));
-        isWaitingForAcks = true;
-        isNewRequest = false;
-        replyCounter = numNodes - 1;
-    }
-
-    /**
      * @return true iff transactionOperationList is empty.
      */
     public boolean allOperationsOver(){
-        return !isWaitingForAcks && transactionOperationList.isEmpty();
-    }
-
-
-    /**
-     * Return true iff current node can enter CS.
-     */
-    public boolean canEnterCS (){
-        return checkAllAcksReceived () && isAtHeadOfRQ ();
-    }
-
-    /**
-     * Enter CS.
-     */
-    public void enterCS(){
-        isWaitingForAcks = false;
-    }
-
-    /**
-     * Execute code in CS.
-     */
-    public void executeCS (){
-        System.out.println (getTimeStampedMessage (
-            FINAL_MESSAGE + currentTransactionOperation.parameter));
-        distributedFileWriter.appendToFile (
-            getTimeStampedMessage (
-                FINAL_MESSAGE + currentTransactionOperation.parameter) + "\n");
-    }
-
-    /**
-     * Dequeue your Request and send Release message to all nodes.
-     */
-    public void exitCS () throws UnknownHostException, IOException {
-        requestQueue.poll ();
-
-        // Send release message with the TS of the request
-        System.out.println (getTimeStampedMessage (requestTimeStamp,
-                                                   "RELEASE"));
-        broadcastMessage (getTimeStampedMessage (requestTimeStamp,
-                                                 "RELEASE"));
-    }
-
-    /**
-     * @return true iff a request from this node is at the head of
-     * local RQ.
-     */
-    boolean isAtHeadOfRQ (){
-        return requestQueue.peek ().getProcessId () == processId;
-    }
-    
-    /**
-     * @return true iff Acks from all peers have been received.
-     */
-    boolean checkAllAcksReceived (){
-        return replyCounter == 0;
+        return !isWaitingForAck && transactionOperationList.isEmpty();
     }
 
     /**
@@ -332,10 +268,9 @@ public class TransactionExecutor {
                     getTimeStampedMessage("INIT" + " " + selfHostname + ":" + selfPort));
     }
 
-
     /** 
-     * Check for incoming Request/Release messages and queue/dequeue
-     * the relevant Requests.
+     * Check for incoming TransactionOperation messages or Acks and
+     * handle them.
      */
     void handleRequests (){
         String message = "";
@@ -384,8 +319,8 @@ public class TransactionExecutor {
 
     /**
      * If message is:
-     * + Request - Add to RQ and send Ack
-     * + Release - Remove original request from RQ
+     * + TransactionOperation Request - Execute it and send Ack.
+     * + Ack - Set isWaitingForAcks to false.
      *
      * Update clock based on the message.
      * 
@@ -396,8 +331,13 @@ public class TransactionExecutor {
     void handleMessage (String message){
         MutexMessage mutexMessage = new MutexMessage (message);
         clock.update ();
-        if (mutexMessage.isRequest ()){
-            // Send ack
+        if (mutexMessage.isOperationRequest()){
+            executeOperation(new TransactionOperation(
+                mutexMessage.getMessage().split(
+                    TransactionOperation.OPERATION_TS_DELIMITER)[0],
+                mutexMessage.getMessage().split(
+                    TransactionOperation.OPERATION_TS_DELIMITER)[1]));
+
             TimeStamp messageTimeStamp = mutexMessage.getTimeStamp ();
             requestQueue.add (messageTimeStamp);
             System.out.println (getTimeStampedMessage (
@@ -433,6 +373,11 @@ public class TransactionExecutor {
             receivedGoAhead = true;
         }
     }
+
+    public void executeOperation(TransactionOperation op){
+        ;
+    }
+
     
     /** 
      * Maybe have a pool of sender threads later.

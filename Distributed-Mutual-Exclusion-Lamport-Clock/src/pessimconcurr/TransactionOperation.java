@@ -1,10 +1,13 @@
 package pessimconcurr;
 
 import mutexlamport.Operation;
+import mutexlamport.TimeStamp;
 
 public class TransactionOperation extends Operation{
     public int transactionId;
+    public TimeStamp transactionTimeStamp;
     public String dataItemLabel;
+    public static final String OPERATION_TS_DELIMITER = " \\| ";
 
     /**
      * operationString should be of the form "TransactionID (R|W) dataItemLabel [parameter]".
@@ -17,14 +20,24 @@ public class TransactionOperation extends Operation{
         if (this.operationType == OperationType.WRITE){
             this.parameter = tokens[3];
         }
+        transactionTimeStamp = null;
     }
+
+    public TransactionOperation(String timeStampString, String operationString){
+        this(operationString);
+        transactionTimeStamp = new TimeStamp(timeStampString);
+    }
+
 
     public String toString (){
         if (operationType == OperationType.READ){
-            return transactionId + " " + operationType.getValue() + " " + dataItemLabel;
+            return transactionTimeStamp + " | "
+                    + transactionId + " "
+                    + operationType.getValue() + " " + dataItemLabel;
         }
         else {
-            return transactionId + " " + operationType.getValue ()
+            return transactionTimeStamp + " | " + transactionId
+                    + " " + operationType.getValue ()
                     + " " + dataItemLabel + " " + parameter;
         }
     }

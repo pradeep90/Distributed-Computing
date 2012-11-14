@@ -17,6 +17,10 @@ public class MutexMessage {
             "^(INIT) .*$";
     private static final String INIT_RESPONSE_REGEX =
             "^(GO_AHEAD_INIT)$";
+    private static final String OPERATION_REGEX =
+            "^(OPERATION) .*$";
+    private static final Pattern OPERATION_PATTERN =
+            Pattern.compile("^(.*) $");
     
     public MutexMessage (TimeStamp timeStamp, String message){
         this.timeStamp = timeStamp;
@@ -75,6 +79,10 @@ public class MutexMessage {
     
     public boolean isInitResponse(){
         return message.matches(INIT_RESPONSE_REGEX);
+    }
+
+    public boolean isOperationRequest(){
+        return message.matches(OPERATION_REGEX);
     }
 }
     

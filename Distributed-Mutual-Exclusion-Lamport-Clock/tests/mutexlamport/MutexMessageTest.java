@@ -14,12 +14,14 @@ public class MutexMessageTest {
     String ackString = "PID 44 TS 9730 : [ ACK 93 from 537 ]";
     String initRequestString = "PID 0 TS 51 : [ INIT localhost:36330 ]";
     String initResponseString = "PID 0 TS 51 : [ GO_AHEAD_INIT ]";
+    String operationString = "PID 0 TS 51 : [ OPERATION PID 0 TS 51 2 W y 53 ]";
 
     MutexMessage releaseMessage = new MutexMessage (releaseString);
     MutexMessage requestMessage = new MutexMessage (requestString);
     MutexMessage ackMessage = new MutexMessage (ackString);
     MutexMessage initRequestMessage = new MutexMessage(initRequestString);
     MutexMessage initResponseMessage = new MutexMessage(initResponseString);
+    MutexMessage operationMessage = new MutexMessage(operationString);
 
     @Before
     public void setUp () {
@@ -98,5 +100,24 @@ public class MutexMessageTest {
                     initRequestMessage.isInitResponse());
         assertTrue("initResponseMessage.isInitResponse ()",
                    initResponseMessage.isInitResponse());
+    }
+
+    /**
+     * Test method for {@link MutexMessage#isOperationRequest()}.
+     */
+    @Test
+    public final void testIsOperationRequest (){
+        assertFalse("requestMessage.isOperationRequest ()",
+                    requestMessage.isOperationRequest ());
+        assertFalse("releaseMessage.isOperationRequest ()",
+                    releaseMessage.isOperationRequest ());
+        assertFalse("ackMessage.isOperationRequest ()",
+                    ackMessage.isOperationRequest ());
+        assertFalse("initRequestMessage.isOperationRequest ()",
+                    initRequestMessage.isOperationRequest());
+        assertFalse("initResponseMessage.isOperationRequest ()",
+                   initResponseMessage.isOperationRequest());
+        assertTrue("operationMessage.isOperationRequest ()",
+                   operationMessage.isOperationRequest());
     }
 }

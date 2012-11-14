@@ -62,4 +62,15 @@ public class TimeStampTest {
         assertTrue (smallTimeStamp.equals (new TimeStamp (smallTimeStamp)));
     }
 
+    /**
+     * Test method for {@link TimeStamp#TimeStampFromString()}.
+     */
+    @Test
+    public final void testTimeStampFromString(){
+        String timeStampString = "PID 31 TS 2937";
+        TimeStamp curr = new TimeStamp(timeStampString);
+        assertEquals(2937, curr.getTimeValue());
+        assertEquals(31, curr.getProcessId()); 
+    }
+
 }

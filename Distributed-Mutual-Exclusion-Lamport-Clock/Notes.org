@@ -48,7 +48,9 @@
 *** x on one node, y on another
 *** DONE List of (Transaction ID, Operation) as input
     CLOCK: [2012-11-14 Wed 19:12]--[2012-11-14 Wed 19:56] =>  0:44
-*** In every iteration of your while loop, keep trying to execute the operation
+*** TODO In every iteration of your while loop, keep trying to execute the operation
+    CLOCK: [2012-11-14 Wed 21:57]--[2012-11-14 Wed 23:25] =>  1:28
+**** TODO Stuck at making TransactionOperation work with TS string, operationString as constructor arguments.
 *** Wait for the Ack after each operation
 * Optimistic Concurrency Control - R and W TS with each data item
 ** without replication

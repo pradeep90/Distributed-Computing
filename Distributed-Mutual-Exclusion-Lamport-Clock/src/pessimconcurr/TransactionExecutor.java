@@ -56,6 +56,9 @@ public class TransactionExecutor {
     FileWriter distributedFileWriter;
     TransactionOperation currentTransactionOperation;
 
+
+    HashMap<Integer, TimeStamp> transactionTimeStampHash;
+        
     List<TransactionOperation> transactionOperationList;
     List<String> allHostnames;
     List<Integer> allPorts;
@@ -71,7 +74,7 @@ public class TransactionExecutor {
 
     public static void main(String[] argv) {
         if (argv.length == 0){
-	    System.out.println ("Format: id shared_file_name init_server_host:init_server_port host1:port1 [host2:port2 ...]");
+	    System.out.println ("Format: id shared_file_name data_items_file init_server_host:init_server_port host1:port1 [host2:port2 ...]");
 	    System.exit (1);
         }
 
@@ -81,6 +84,13 @@ public class TransactionExecutor {
         
 	int processId = Integer.parseInt(hostPorts.remove(0));
         String sharedFileName = hostPorts.remove (0);
+        String dataItemsFileName = hostPorts.remove (0);
+
+        HashMap<String, Integer> dataItemLocationHash = getDataItemLocationHash(
+            dataItemsFileName);
+
+        System.out.println ("dataItemLocationHash");
+        System.out.println (dataItemLocationHash);
 
 	TransactionExecutor transactionExecutor = new TransactionExecutor(
             processId, sharedFileName, hostPorts);
@@ -119,6 +129,11 @@ public class TransactionExecutor {
             new FileWriter (sharedFileName));
     }
 
+    public TransactionExecutor(){
+        ;
+    }
+
+
     public void initValues (int processId,
                             String selfHostname,
                             int selfPort,
@@ -136,6 +151,7 @@ public class TransactionExecutor {
         clock = new LogicalClock (this.processId);
         requestQueue = new PriorityQueue<TimeStamp>();
         this.distributedFileWriter = distributedFileWriter;
+        transactionTimeStampHash = new HashMap<Integer, TimeStamp>();
 
         initNodes = new HashSet<String>();
 
@@ -182,6 +198,31 @@ public class TransactionExecutor {
         }
     }
 
+    /** 
+     * @return hash of data item label -> pid of node having the data item.
+     */
+    public static HashMap<String, Integer> getDataItemLocationHash(String filename){
+        HashMap<String, Integer> locationHash = new HashMap<String, Integer>();
+
+        try {
+
+            FileInputStream fstream = new FileInputStream(filename);
+            DataInputStream in = new DataInputStream(fstream);
+            BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+
+            String line;
+            while ((line = reader.readLine()) != null) {
+                System.out.println ("line");
+                System.out.println (line);
+                locationHash.put(line.split(" ")[0],
+                                 Integer.parseInt(line.split(" ")[1]));
+            }
+            in.close();
+        } catch (IOException e) {
+            e.printStackTrace ();
+        }
+        return locationHash;
+    }
 
     /**
      * Bootstrap by sending messages to a centralized init server
@@ -212,43 +253,27 @@ public class TransactionExecutor {
         isNewRequest = false;
         isWaitingForAck = false;
 
-        HashMap<Integer, TimeStamp> transactionTimeStampHash =
-                new HashMap<Integer, TimeStamp>();
-        
         try {
 	    while (true){
                 Thread.sleep (SLEEP_TIME);
 
 	    	handleRequests ();
+
                 System.out.println (getTimeStampedMessage (
                     "requestQueue" + requestQueue.toString ()));
 
-                if (allOperationsOver()){
+                if (allOperationsOver() || isWaitingForAck){
                     continue;
                 }
 
-                if (!isWaitingForAck){
-                    System.out.println ("transactionOperationList");
-                    printTimeStampedMessage (transactionOperationList.toString ());
-                    currentTransactionOperation = transactionOperationList.remove (0);
+                currentTransactionOperation = getNextTransactionOperation();
 
-                    if (!transactionTimeStampHash.containsKey(
-                            currentTransactionOperation.transactionId)){
-                        transactionTimeStampHash.put(
-                            currentTransactionOperation.transactionId,
-                            clock.getTimeStamp());
-                    }
-                    currentTransactionOperation.transactionTimeStamp =
-                            transactionTimeStampHash.get(
-                                currentTransactionOperation.transactionId);
+                // sendOperation(currentTransactionOperation);
 
-                    // sendOperation(currentTransactionOperation);
-
-                    // TODO(spradeep): Should this be here?
-                    clock.update ();
-                }
-	    }
-	} catch (Exception e) {
+                // TODO(spradeep): Should this be here?
+                clock.update ();
+            }
+        } catch (Exception e) {
 	    System.out.println ("Error while trying for mutual exclusion:"
 				+ e.toString ());
         } finally {
@@ -271,6 +296,27 @@ public class TransactionExecutor {
         sendMessage(initServerHost,
                     initServerPort,
                     getTimeStampedMessage("INIT" + " " + selfHostname + ":" + selfPort));
+    }
+
+    /**
+     * Assumption: transactionOperationList is not empty.
+     *
+     * Get the next operation to be executed.
+     * If it's a new transaction, then assign its timestamp as the current timestamp.
+     * 
+     * @return the next TransactionOperation in the list.
+     */
+    public TransactionOperation getNextTransactionOperation(){
+        System.out.println ("transactionOperationList");
+        printTimeStampedMessage (transactionOperationList.toString ());
+        TransactionOperation nextOperation = transactionOperationList.remove (0);
+
+        if (!transactionTimeStampHash.containsKey(nextOperation.transactionId)){
+            transactionTimeStampHash.put(nextOperation.transactionId, clock.getTimeStamp());
+        }
+        nextOperation.transactionTimeStamp = transactionTimeStampHash.get(
+            nextOperation.transactionId);
+        return nextOperation;
     }
 
     /** 
@@ -343,6 +389,7 @@ public class TransactionExecutor {
 
             TimeStamp messageTimeStamp = mutexMessage.getTimeStamp ();
             requestQueue.add (messageTimeStamp);
+
             System.out.println (getTimeStampedMessage (
                 "ACK " + messageTimeStamp.getProcessId ()
                 + " from " + processId));
@@ -352,8 +399,6 @@ public class TransactionExecutor {
                              + " from " + processId));
         } else if (mutexMessage.isAck ()){
             replyCounter--;
-        } else if (mutexMessage.isRelease ()){
-            boolean removed = requestQueue.remove (mutexMessage.getTimeStamp ());
         } else if (mutexMessage.isInitRequest()) {
             if (initNodes.size() == numNodes){
                 return;
@@ -376,6 +421,16 @@ public class TransactionExecutor {
             receivedGoAhead = true;
         }
     }
+
+    /** 
+     * Send op to the node having op's data item.
+     * 
+     * @param op 
+     */
+    public void sendOperation(TransactionOperation op){
+        ;
+    }
+
 
     public void executeOperation(TransactionOperation op){
         ;

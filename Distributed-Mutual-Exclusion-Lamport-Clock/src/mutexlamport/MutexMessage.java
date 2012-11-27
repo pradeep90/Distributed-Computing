@@ -17,10 +17,14 @@ public class MutexMessage {
             "^(INIT) .*$";
     private static final String INIT_RESPONSE_REGEX =
             "^(GO_AHEAD_INIT)$";
+
     private static final String OPERATION_REGEX =
             "^(OPERATION) .*$";
     private static final Pattern OPERATION_PATTERN =
             Pattern.compile("^(.*) $");
+
+    private static final String TRANSACTION_OPERATION_REGEX =
+            "^(TRANS-OPERATION) .*$";
     
     public MutexMessage (TimeStamp timeStamp, String message){
         this.timeStamp = timeStamp;

@@ -42,7 +42,6 @@
    CLOCK: [2012-11-14 Wed 01:09]--[2012-11-14 Wed 01:51] =>  0:42
 ** TODO Print messages
 ** Get list of peers, etc. from the Bootstrap server wonly.
-* TODO Subclass Mutex Message
 * TODO Transactions (R + W)
 ** Serializability - Transaction - Read and Write with Lamport TS
 *** Data Item
@@ -54,5 +53,15 @@
     CLOCK: [2012-11-14 Wed 21:57]--[2012-11-14 Wed 23:25] =>  1:28
 **** DONE Stuck at making TransactionOperation work with TS string, operationString as constructor arguments.
 *** Wait for the Ack after each operation
+** Algo
+*** Loop
+**** Send operation requests for a transaction
+**** Wait for each ack
+**** If rejected, restart the transaction
+***** Remove timestamp from transactionTimeStampHash
+**** Requests from other nodes
+***** execute Operation (data item)
+***** Send ack with the success or failure info
+** Data item: have a list of all the completed reads and writes
 ** Prewrite buffer, etc. at each data item - no replication
 * TODO Optimistic Concurrency Control - R and W TS with full replication

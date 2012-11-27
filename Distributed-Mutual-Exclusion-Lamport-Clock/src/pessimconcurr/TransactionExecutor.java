@@ -85,7 +85,7 @@ public class TransactionExecutor {
 	TransactionExecutor transactionExecutor = new TransactionExecutor(
             processId, sharedFileName, hostPorts);
         transactionExecutor.bootstrap();
-	// transactionExecutor.startExecution ();
+	transactionExecutor.startExecution ();
     }
 
     public TransactionExecutor(int processId, String sharedFileName, List<String> hostPorts){
@@ -203,6 +203,11 @@ public class TransactionExecutor {
         }
     }
     
+    /**
+     * Whenever possible, send transaction operations out to the data items.
+     *
+     * Handle any requests or acks sent by other nodes.
+     */
     public void startExecution (){
         isNewRequest = false;
         isWaitingForAck = false;
@@ -332,11 +337,9 @@ public class TransactionExecutor {
         MutexMessage mutexMessage = new MutexMessage (message);
         clock.update ();
         if (mutexMessage.isOperationRequest()){
-            executeOperation(new TransactionOperation(
-                mutexMessage.getMessage().split(
-                    TransactionOperation.OPERATION_TS_DELIMITER)[0],
-                mutexMessage.getMessage().split(
-                    TransactionOperation.OPERATION_TS_DELIMITER)[1]));
+
+            executeOperation(TransactionOperation.fromTimeStampedString(
+                mutexMessage.toString()));
 
             TimeStamp messageTimeStamp = mutexMessage.getTimeStamp ();
             requestQueue.add (messageTimeStamp);

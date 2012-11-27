@@ -1,4 +1,5 @@
 package mutexlamport;
+
 import mutexlamport.TimeStamp;
 
 public class LogicalClock {

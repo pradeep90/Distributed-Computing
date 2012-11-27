@@ -5,9 +5,7 @@ import org.junit.Before;
 import org.junit.After;
 import mutexlamport.Operation.OperationType;
 import mutexlamport.Operation;
-// Isn't working for some reason
-// import mutexlamport.Timestamp;
-import mutexlamport.LogicalClock;
+// import mutexlamport.LogicalClock;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -45,16 +43,17 @@ public class TransactionOperationTest {
     }
 
     /**
-     * Test method for {@link TransactionOperation#TransactionOperationTSAndOpString()}.
+     * Test method for {@link TransactionOperation#fromTimeStampedString()}.
      */
     @Test
-    public final void testTransactionOperationTSAndOpString(){
-        // String s1 = "PID 31 TS 2937";
-        // String s2 = "2 W y 53";
-        // writeOperation.transactionTimeStamp = new Timestamp(s1);
-        // assertEquals(writeOperation, new TransactionOperation(s1, s2));
+    public final void testFromTimeStampedString(){
+        String s1 = "PID 31 TS 2937";
+        String s2 = "2 W y 53";
+        TransactionOperation writeOperation = new TransactionOperation(s2);
+        writeOperation.transactionTimeStamp = TransactionOperation.getTimeStamp(s1);
+        assertEquals(writeOperation, TransactionOperation.fromTimeStampedString(
+            s1 + " : " + s2));
     }
-
 
     /**
      * Test method for {@link Operation#toString()}.
@@ -62,8 +61,8 @@ public class TransactionOperationTest {
     @Test
     public final void testToString(){
         // Initially, Timestamp will be null
-        assertEquals("null | 1 R x", readOperation.toString());
-        assertEquals("null | 2 W y 53", writeOperation.toString());
+        assertEquals("null : 1 R x", readOperation.toString());
+        assertEquals("null : 2 W y 53", writeOperation.toString());
     }
 
 }

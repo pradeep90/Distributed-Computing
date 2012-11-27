@@ -58,6 +58,7 @@ public class TransactionExecutor {
 
 
     HashMap<Integer, TimeStamp> transactionTimeStampHash;
+    HashMap<String, Integer> dataItemLocationHash;
         
     List<TransactionOperation> transactionOperationList;
     List<String> allHostnames;
@@ -93,12 +94,14 @@ public class TransactionExecutor {
         System.out.println (dataItemLocationHash);
 
 	TransactionExecutor transactionExecutor = new TransactionExecutor(
-            processId, sharedFileName, hostPorts);
+            processId, sharedFileName, hostPorts, dataItemLocationHash);
         transactionExecutor.bootstrap();
 	transactionExecutor.startExecution ();
     }
 
-    public TransactionExecutor(int processId, String sharedFileName, List<String> hostPorts){
+    public TransactionExecutor(int processId, String sharedFileName,
+                               List<String> hostPorts,
+                               HashMap<String, Integer> dataItemLocationHash){
         this.processId = processId;
         System.out.println ("Writing output to " + sharedFileName);
 
@@ -126,7 +129,8 @@ public class TransactionExecutor {
             selfPort,
             allHostnames,
             allPorts,
-            new FileWriter (sharedFileName));
+            new FileWriter (sharedFileName),
+            dataItemLocationHash);
     }
 
     public TransactionExecutor(){
@@ -140,7 +144,8 @@ public class TransactionExecutor {
                             // List<TransactionOperation> transactionOperationList,
                             List<String> allHostnames,
                             List<Integer> allPorts,
-                            FileWriter distributedFileWriter) {
+                            FileWriter distributedFileWriter,
+                            HashMap<String, Integer> dataItemLocationHash) {
         this.processId = processId;
         this.selfHostname = selfHostname;
         this.selfPort = selfPort;
@@ -152,6 +157,7 @@ public class TransactionExecutor {
         requestQueue = new PriorityQueue<TimeStamp>();
         this.distributedFileWriter = distributedFileWriter;
         transactionTimeStampHash = new HashMap<Integer, TimeStamp>();
+        this.dataItemLocationHash = dataItemLocationHash;
 
         initNodes = new HashSet<String>();
 
@@ -385,7 +391,7 @@ public class TransactionExecutor {
         if (mutexMessage.isOperationRequest()){
 
             executeOperation(TransactionOperation.fromTimeStampedString(
-                mutexMessage.toString()));
+                mutexMessage.getMessage()));
 
             TimeStamp messageTimeStamp = mutexMessage.getTimeStamp ();
             requestQueue.add (messageTimeStamp);
@@ -398,6 +404,7 @@ public class TransactionExecutor {
                              "ACK " + messageTimeStamp.getProcessId ()
                              + " from " + processId));
         } else if (mutexMessage.isAck ()){
+            // TODO(spradeep): 
             replyCounter--;
         } else if (mutexMessage.isInitRequest()) {
             if (initNodes.size() == numNodes){
@@ -428,7 +435,8 @@ public class TransactionExecutor {
      * @param op 
      */
     public void sendOperation(TransactionOperation op){
-        ;
+        int destinationId = dataItemLocationHash.get(op.dataItemLabel);
+        // sendMessage(destinationId, );
     }
 
 

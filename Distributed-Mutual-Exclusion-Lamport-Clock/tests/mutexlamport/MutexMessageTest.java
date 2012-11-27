@@ -14,7 +14,7 @@ public class MutexMessageTest {
     String ackString = "PID 44 TS 9730 : [ ACK 93 from 537 ]";
     String initRequestString = "PID 0 TS 51 : [ INIT localhost:36330 ]";
     String initResponseString = "PID 0 TS 51 : [ GO_AHEAD_INIT ]";
-    String operationString = "PID 0 TS 51 : [ OPERATION PID 0 TS 51 2 W y 53 ]";
+    String operationString = "PID 0 TS 51 : [ PID 0 TS 51 : 2 W y 53 ]";
 
     MutexMessage releaseMessage = new MutexMessage (releaseString);
     MutexMessage requestMessage = new MutexMessage (requestString);

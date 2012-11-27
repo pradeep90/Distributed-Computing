@@ -45,6 +45,11 @@ public class TransactionOperation extends Operation{
         return new TimeStamp(timeStampString);
     }
 
+    public TransactionOperation setTimeStamp(TimeStamp ts){
+        this.transactionTimeStamp = ts;
+        return this;
+    }
+
     public String toString (){
         if (operationType == OperationType.READ){
             return transactionTimeStamp + " : "

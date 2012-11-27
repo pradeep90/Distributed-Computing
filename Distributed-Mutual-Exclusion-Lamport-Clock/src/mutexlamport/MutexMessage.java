@@ -4,8 +4,8 @@ import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
 public class MutexMessage {
-    private TimeStamp timeStamp;
-    private String message;
+    protected TimeStamp timeStamp;
+    protected String message;
     private static final Pattern MESSAGE_PATTERN =
             Pattern.compile("^PID (\\d+) TS (\\d+) : \\[ (.*) \\]$");
     private static final String ACK_REGEX = "^(ACK (\\d+) from (\\d+))$";
@@ -19,12 +19,7 @@ public class MutexMessage {
             "^(GO_AHEAD_INIT)$";
 
     private static final String OPERATION_REGEX =
-            "^(OPERATION) .*$";
-    private static final Pattern OPERATION_PATTERN =
-            Pattern.compile("^(.*) $");
-
-    private static final String TRANSACTION_OPERATION_REGEX =
-            "^(TRANS-OPERATION) .*$";
+            "^PID (\\d+) TS (\\d+) : \\d+ [RW] .*$";
     
     public MutexMessage (TimeStamp timeStamp, String message){
         this.timeStamp = timeStamp;
@@ -49,7 +44,11 @@ public class MutexMessage {
         // TODO(spradeep): Else, cup or throw Exception
         // (Check for Ack though)
     }
-   
+
+    public MutexMessage(){
+        ;
+    }
+    
     public TimeStamp getTimeStamp (){
         return new TimeStamp (timeStamp);
     }

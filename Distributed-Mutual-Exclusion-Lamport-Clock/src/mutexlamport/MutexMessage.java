@@ -6,7 +6,7 @@ import java.util.regex.Matcher;
 public class MutexMessage {
     protected TimeStamp timeStamp;
     protected String message;
-    private static final Pattern MESSAGE_PATTERN =
+    protected static final Pattern MESSAGE_PATTERN =
             Pattern.compile("^PID (\\d+) TS (\\d+) : \\[ (.*) \\]$");
     private static final String ACK_REGEX = "^(ACK (\\d+) from (\\d+))$";
     private static final String REQUEST_REGEX =
@@ -37,6 +37,8 @@ public class MutexMessage {
             this.timeStamp = new TimeStamp (m.group (2), m.group (1));
             this.message = m.group (3);
         } else {
+            System.out.println ("timeStampedMessage");
+            System.out.println (timeStampedMessage); 
             System.out.println ("Invalid MutexMessage string");
             System.exit (1);
         }

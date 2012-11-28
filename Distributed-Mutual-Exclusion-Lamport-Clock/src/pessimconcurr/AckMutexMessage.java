@@ -63,4 +63,19 @@ public class AckMutexMessage extends MutexMessage {
         }
         return result;
     }
+
+    /** 
+     * @return true iff message is an AckMutexMessage.
+     */
+    public static boolean isAckMutexMessage(String message){
+        Matcher mutex_matcher = MESSAGE_PATTERN.matcher(message);
+
+        if (!mutex_matcher.matches()){
+            return false;
+        }
+
+        MutexMessage mutexMessage = new MutexMessage(message);
+        Matcher m = ACK_MESSAGE_PATTERN.matcher(mutexMessage.getMessage());
+        return m.matches();
+    }
 }

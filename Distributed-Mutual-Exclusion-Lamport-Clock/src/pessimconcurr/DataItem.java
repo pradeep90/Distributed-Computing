@@ -16,7 +16,21 @@ public class DataItem {
         return value;
     }
 
+    public boolean canRead(TransactionOperation op){
+        return true;
+    }
+
+    public boolean canWrite(TransactionOperation op){
+        return true;
+    }
+
     public void write(String value){
         this.value = value;
     }
+
+    public String toString(){
+        String currValue = value.equals("") ? "None": value;
+        return "<DataItem " + label + ": " + currValue + ">";
+    }
+
 }

@@ -55,10 +55,15 @@ public class TransactionExecutor {
     int initServerPort;
     FileWriter distributedFileWriter;
     TransactionOperation currentTransactionOperation;
+    int operationIndex;
+    int transactionStartIndex;
+    int currTransactionId;
+    String lastExecutionOutput;
 
 
     HashMap<Integer, TimeStamp> transactionTimeStampHash;
     HashMap<String, Integer> dataItemLocationHash;
+    HashMap<String, DataItem> dataItemHash;
         
     List<TransactionOperation> transactionOperationList;
     List<String> allHostnames;
@@ -158,6 +163,17 @@ public class TransactionExecutor {
         this.distributedFileWriter = distributedFileWriter;
         transactionTimeStampHash = new HashMap<Integer, TimeStamp>();
         this.dataItemLocationHash = dataItemLocationHash;
+        dataItemHash = new HashMap<String, DataItem>();
+
+        for (String label : dataItemLocationHash.keySet()){
+            if (dataItemLocationHash.get(label) == processId){
+                dataItemHash.put(label, new DataItem(label));
+            }
+        }
+
+        operationIndex = 0;
+        transactionStartIndex = 0;
+        lastExecutionOutput = null;
 
         initNodes = new HashSet<String>();
 
@@ -177,9 +193,10 @@ public class TransactionExecutor {
     /**
      * Read a list of transactionOperations from inputReader.
      */
-    public static List<TransactionOperation> getTransactionOperationListFromReader(BufferedReader inputReader)
-            throws IOException{
-        List<TransactionOperation> transactionOperationList = new ArrayList<TransactionOperation> ();
+    public static List<TransactionOperation> getTransactionOperationListFromReader(
+        BufferedReader inputReader) throws IOException{
+        List<TransactionOperation> transactionOperationList =
+                new ArrayList<TransactionOperation> ();
         String currLine;
         while ((currLine = inputReader.readLine ()) != null){
             System.out.println (currLine);
@@ -265,8 +282,8 @@ public class TransactionExecutor {
 
 	    	handleRequests ();
 
-                System.out.println (getTimeStampedMessage (
-                    "requestQueue" + requestQueue.toString ()));
+                System.out.println("dataItemHash");
+                System.out.println(getTimeStampedMessage(dataItemHash.toString()));
 
                 if (allOperationsOver() || isWaitingForAck){
                     continue;
@@ -274,7 +291,7 @@ public class TransactionExecutor {
 
                 currentTransactionOperation = getNextTransactionOperation();
 
-                // sendOperation(currentTransactionOperation);
+                sendOperation(currentTransactionOperation);
 
                 // TODO(spradeep): Should this be here?
                 clock.update ();
@@ -292,7 +309,7 @@ public class TransactionExecutor {
      * @return true iff transactionOperationList is empty.
      */
     public boolean allOperationsOver(){
-        return !isWaitingForAck && transactionOperationList.isEmpty();
+        return !isWaitingForAck && operationIndex >= transactionOperationList.size();
     }
 
     /**
@@ -313,15 +330,21 @@ public class TransactionExecutor {
      * @return the next TransactionOperation in the list.
      */
     public TransactionOperation getNextTransactionOperation(){
-        System.out.println ("transactionOperationList");
-        printTimeStampedMessage (transactionOperationList.toString ());
-        TransactionOperation nextOperation = transactionOperationList.remove (0);
+        // System.out.println ("transactionOperationList");
+        // printTimeStampedMessage (transactionOperationList.toString ());
+
+        TransactionOperation nextOperation = transactionOperationList.get (operationIndex);
 
         if (!transactionTimeStampHash.containsKey(nextOperation.transactionId)){
+            // New transaction
             transactionTimeStampHash.put(nextOperation.transactionId, clock.getTimeStamp());
+            transactionStartIndex = operationIndex;
+            currTransactionId = nextOperation.transactionId;
         }
         nextOperation.transactionTimeStamp = transactionTimeStampHash.get(
             nextOperation.transactionId);
+
+        operationIndex++;
         return nextOperation;
     }
 
@@ -377,7 +400,8 @@ public class TransactionExecutor {
     /**
      * If message is:
      * + TransactionOperation Request - Execute it and send Ack.
-     * + Ack - Set isWaitingForAcks to false.
+     * + Ack - Set isWaitingForAck to false.
+     * + Bootstrap message (Request / Go ahead) - deal with it.
      *
      * Update clock based on the message.
      * 
@@ -388,24 +412,35 @@ public class TransactionExecutor {
     void handleMessage (String message){
         MutexMessage mutexMessage = new MutexMessage (message);
         clock.update ();
+
         if (mutexMessage.isOperationRequest()){
 
-            executeOperation(TransactionOperation.fromTimeStampedString(
-                mutexMessage.getMessage()));
+            TransactionOperation op = TransactionOperation.fromTimeStampedString(
+                mutexMessage.getMessage());
+
+            boolean is_success = executeOperation(op);
 
             TimeStamp messageTimeStamp = mutexMessage.getTimeStamp ();
-            requestQueue.add (messageTimeStamp);
 
-            System.out.println (getTimeStampedMessage (
-                "ACK " + messageTimeStamp.getProcessId ()
-                + " from " + processId));
-            sendMessage (messageTimeStamp.getProcessId (),
-                         getTimeStampedMessage (
-                             "ACK " + messageTimeStamp.getProcessId ()
-                             + " from " + processId));
-        } else if (mutexMessage.isAck ()){
-            // TODO(spradeep): 
-            replyCounter--;
+            AckMutexMessage ack = new AckMutexMessage(op, is_success, processId);
+            if (op.operationType == Operation.OperationType.READ){
+                ack.val = lastExecutionOutput;
+            }
+
+            System.out.println("Sending Ack... " + getTimeStampedMessage(ack.toString()));
+
+            sendMessage(op.transactionTimeStamp.getProcessId(),
+                        getTimeStampedMessage(ack.toString()));
+        } else if (AckMutexMessage.isAckMutexMessage(message)){
+            AckMutexMessage ack = new AckMutexMessage(message);
+            if (ack.is_success){
+                isWaitingForAck = false;
+            } else {
+                // Restart transaction.
+                operationIndex = transactionStartIndex;
+                // Remove old TS assigned to the transaction.
+                transactionTimeStampHash.remove(currTransactionId);
+            }
         } else if (mutexMessage.isInitRequest()) {
             if (initNodes.size() == numNodes){
                 return;
@@ -436,15 +471,36 @@ public class TransactionExecutor {
      */
     public void sendOperation(TransactionOperation op){
         int destinationId = dataItemLocationHash.get(op.dataItemLabel);
-        // sendMessage(destinationId, );
+        sendMessage(destinationId, getTimeStampedMessage(op.toString()));
     }
 
-
-    public void executeOperation(TransactionOperation op){
-        ;
+    /** 
+     * Execute operation on a data item.
+     *
+     * Set the output value (if any) in lastExecutionOutput.
+     * 
+     * @return true iff execution succeeds.
+     */
+    public boolean executeOperation(TransactionOperation op){
+        DataItem d;
+        if (op.operationType == Operation.OperationType.READ){
+            d = dataItemHash.get(op.dataItemLabel);
+            if (!d.canRead(op)){
+                return false;
+            }
+            lastExecutionOutput = d.read();
+            return true;
+        } else if (op.operationType == Operation.OperationType.WRITE) {
+            d = dataItemHash.get(op.dataItemLabel);
+            if (!d.canWrite(op)){
+                return false;
+            }
+            d.write(op.parameter);
+            return true;
+        }
+        return false;
     }
 
-    
     /** 
      * Maybe have a pool of sender threads later.
      */

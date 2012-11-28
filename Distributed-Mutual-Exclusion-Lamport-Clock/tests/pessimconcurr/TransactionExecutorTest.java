@@ -41,6 +41,7 @@ public class TransactionExecutorTest {
         transactionExecutor.transactionOperationList.add(writeOperation);
 
         assertEquals(readOperation, transactionExecutor.getNextTransactionOperation());
+        assertEquals(1, transactionExecutor.operationIndex); 
         assertEquals(readOperation.transactionTimeStamp,
                      transactionExecutor.clock.getTimeStamp()); 
         assertEquals(readOperation.transactionTimeStamp,
@@ -48,5 +49,9 @@ public class TransactionExecutorTest {
                          readOperation.transactionId)); 
         assertTrue(transactionExecutor.transactionTimeStampHash.containsKey(
             readOperation.transactionId));
+        assertEquals(0, transactionExecutor.transactionStartIndex); 
+        transactionExecutor.getNextTransactionOperation();
+        assertEquals(1, transactionExecutor.transactionStartIndex); 
+        assertEquals(2, transactionExecutor.operationIndex); 
     }
 }

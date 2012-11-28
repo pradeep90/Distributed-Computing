@@ -66,4 +66,29 @@ public class AckMutexMessageTest {
         assertEquals(false, readAck.is_success); 
         assertEquals("779", readAck.val); 
     }
+
+    /**
+     * Test method for {@link AckMutexMessage#isAckMutexMessage()}.
+     */
+    @Test
+    public final void testIsAckMutexMessage(){
+        TimeStamp ts = new TimeStamp(18, 2);
+        TransactionOperation readOperation = new TransactionOperation("1 R x")
+                .setTimeStamp(ts);
+        TransactionOperation writeOperation = new TransactionOperation("2 W y 53")
+                .setTimeStamp(ts);
+
+        // String writeStringWithoutTS = "ACK from 3 " + writeOperation + " " + true;
+        // String readStringWithoutTS = "ACK from 3 " + readOperation + " "
+        //         + false + " " + "779";
+
+        String writeString = "PID 0 TS 51 : [ ACK from 3 "
+                + writeOperation + " " + true + " ]";
+        String readString = "PID 0 TS 51 : [ ACK from 3 "
+                + readOperation + " " + false + " " + "779" + " ]";
+        assertTrue(AckMutexMessage.isAckMutexMessage(writeString));
+        assertTrue(AckMutexMessage.isAckMutexMessage(readString));
+        assertFalse(AckMutexMessage.isAckMutexMessage("Yo, boyz!!!"));
+    }
+
 }

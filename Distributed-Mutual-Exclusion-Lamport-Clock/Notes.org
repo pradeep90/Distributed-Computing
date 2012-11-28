@@ -54,19 +54,20 @@
 **** DONE Stuck at making TransactionOperation work with TS string, operationString as constructor arguments.
 *** Wait for the Ack after each operation
 ** Algo
-   CLOCK: [2012-11-28 Wed 03:33]
+   CLOCK: [2012-11-28 Wed 03:33]--[2012-11-28 Wed 05:41] =>  2:08
    CLOCK: [2012-11-28 Wed 00:04]--[2012-11-28 Wed 02:18] =>  2:14
 *** Loop
-**** TODO Send operation requests for a transaction
-**** TODO Wait for each ack
+**** DONE Send operation requests for a transaction
+**** DONE Wait for each ack
 ***** DONE Ack READ [SUCCESS | FAIL] from PID VAL
 ***** DONE Ack WRITE [SUCCESS | FAIL] from PID
 ***** DONE Yeah... subclass MutexMessage
-**** TODO If rejected, restart the transaction
-***** Remove timestamp from transactionTimeStampHash
+**** DONE If rejected, restart the transaction
+***** DONE Remove timestamp from transactionTimeStampHash
 **** Requests from other nodes
-***** TODO execute Operation (data item)
-***** TODO Send ack with the success or failure info
-** Data item: have a list of all the completed reads and writes
-** Prewrite buffer, etc. at each data item - no replication
+***** DONE execute Operation (data item)
+***** DONE Send ack with the success or failure info
+** TODO Data item: have a list of all the completed reads and writes
+** TODO Data Item time stamps
+** TODO Prewrite buffer, etc. at each data item - no replication
 * TODO Optimistic Concurrency Control - R and W TS with full replication

@@ -3,9 +3,9 @@ package pessimconcurr;
 import org.junit.Test;
 import org.junit.Before;
 import org.junit.After;
+import mutexlamport.TimeStamp;
 import mutexlamport.Operation.OperationType;
 import mutexlamport.Operation;
-// import mutexlamport.LogicalClock;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -22,6 +22,7 @@ public class TransactionOperationTest {
         writeOperation = new TransactionOperation("2 W y 53");
         // LogicalClock l = new LogicalClock();
         Operation o = new Operation();
+        TimeStamp t = new TimeStamp();
     }
     
     @After

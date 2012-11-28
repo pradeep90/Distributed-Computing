@@ -10,6 +10,9 @@
 ** I got hamcrest related NoClassDefFoundError so I added it to the classpath
 * DONE Migrate Google elisp code for dealing with Java coding.
 * DONE Unit Tests
+* DONE Bug in Makefile
+** DONE TransactionOperationTest is not able to import mutexlamport.TimeStamp
+*** Damn! I was importing Timestamp instead of TimeStamp (hung by my own autocompletion)
 * Integration Tests
 * JDEE
 * DONE Have manual and script-based trigger - Get event list from a file
@@ -33,27 +36,27 @@
 *** DONE Other people's requests
 **** DONE received request => request is now in the request queue
 **** DONE received release => request is no longer in the request queue
-* TODO Bootstrap code - Centralized server
+* DONE Bootstrap code - Centralized server
 ** DONE Refactor the pre-startExecution code
    CLOCK: [2012-11-14 Wed 00:30]--[2012-11-14 Wed 00:55] =>  0:25
    CLOCK: [2012-11-13 Tue 20:02]--[2012-11-13 Tue 21:09] =>  1:07
 ** DONE Bootstrap server
    CLOCK: [2012-11-14 Wed 01:51]--[2012-11-14 Wed 02:04] =>  0:13
    CLOCK: [2012-11-14 Wed 01:09]--[2012-11-14 Wed 01:51] =>  0:42
-** TODO Print messages
+** DONE Print messages
 ** Get list of peers, etc. from the Bootstrap server wonly.
 * TODO Transactions (R + W)
-** Serializability - Transaction - Read and Write with Lamport TS
+** DONE Serializability - Transaction - Read and Write with Lamport TS
 *** Data Item
     CLOCK: [2012-11-14 Wed 17:37]--[2012-11-14 Wed 17:49] =>  0:12
 *** x on one node, y on another
 *** DONE List of (Transaction ID, Operation) as input
     CLOCK: [2012-11-14 Wed 19:12]--[2012-11-14 Wed 19:56] =>  0:44
-*** TODO In every iteration of your while loop, keep trying to execute the operation
+*** DONE In every iteration of your while loop, keep trying to execute the operation
     CLOCK: [2012-11-14 Wed 21:57]--[2012-11-14 Wed 23:25] =>  1:28
 **** DONE Stuck at making TransactionOperation work with TS string, operationString as constructor arguments.
-*** Wait for the Ack after each operation
-** Algo
+*** DONE Wait for the Ack after each operation
+** DONE Algo
    CLOCK: [2012-11-28 Wed 03:33]--[2012-11-28 Wed 05:41] =>  2:08
    CLOCK: [2012-11-28 Wed 00:04]--[2012-11-28 Wed 02:18] =>  2:14
 *** Loop
@@ -67,7 +70,12 @@
 **** Requests from other nodes
 ***** DONE execute Operation (data item)
 ***** DONE Send ack with the success or failure info
-** TODO Data item: have a list of all the completed reads and writes
-** TODO Data Item time stamps
+** DONE Data item: have a list of all the completed reads and writes
+*** Problem: This includes ok operations of Transactions that were later restarted.
+** DONE Data Item time stamps
+*** DONE RTM
+*** DONE WTM
+*** DONE canRead
+*** DONE canWrite
 ** TODO Prewrite buffer, etc. at each data item - no replication
 * TODO Optimistic Concurrency Control - R and W TS with full replication

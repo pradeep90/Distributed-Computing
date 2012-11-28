@@ -64,6 +64,7 @@ public class TransactionExecutor {
     HashMap<Integer, TimeStamp> transactionTimeStampHash;
     HashMap<String, Integer> dataItemLocationHash;
     HashMap<String, DataItem> dataItemHash;
+    HashMap<Integer, Integer> startIndexHash;
         
     List<TransactionOperation> transactionOperationList;
     List<String> allHostnames;
@@ -164,6 +165,7 @@ public class TransactionExecutor {
         transactionTimeStampHash = new HashMap<Integer, TimeStamp>();
         this.dataItemLocationHash = dataItemLocationHash;
         dataItemHash = new HashMap<String, DataItem>();
+        startIndexHash = new HashMap<Integer, Integer>();
 
         for (String label : dataItemLocationHash.keySet()){
             if (dataItemLocationHash.get(label) == processId){
@@ -178,6 +180,15 @@ public class TransactionExecutor {
         initNodes = new HashSet<String>();
 
         getTransactionOperationList();
+
+        for (int i = 0; i < transactionOperationList.size(); i++){
+            if (!startIndexHash.containsKey(transactionOperationList.get(i).transactionId)){
+                startIndexHash.put(transactionOperationList.get(i).transactionId, i);
+            }
+        }
+
+        System.out.println ("startIndexHash");
+        System.out.println (startIndexHash); 
 
         try {
             serverSocket = new ServerSocket (selfPort);
@@ -316,6 +327,7 @@ public class TransactionExecutor {
      * Send INIT request to the Init Server.
      */
     public void sendInitRequest(){
+        System.out.println(getTimeStampedMessage("INIT" + " " + selfHostname + ":" + selfPort));
         sendMessage(initServerHost,
                     initServerPort,
                     getTimeStampedMessage("INIT" + " " + selfHostname + ":" + selfPort));
@@ -365,8 +377,8 @@ public class TransactionExecutor {
                 try {
                     newSocket = serverSocket.accept();
                 } catch (SocketTimeoutException e) {
-                    System.out.println (
-                        getTimeStampedMessage ("No requests to the server"));
+                    // System.out.println (
+                    //     getTimeStampedMessage ("No requests to the server"));
                     // No requests to the server - try again
                     continue;
                 }
@@ -378,9 +390,8 @@ public class TransactionExecutor {
 
                 try {
                     message += future.get();
-
                     // System.out.println ("getTimeStampedMessage (message)");
-                    System.out.println (getTimeStampedMessage (message));
+                    // System.out.println (getTimeStampedMessage (message));
                     // TODO(spradeep): Handle the message
                     handleMessage (message);
                 } catch (InterruptedException e) {
@@ -427,19 +438,23 @@ public class TransactionExecutor {
                 ack.val = lastExecutionOutput;
             }
 
-            System.out.println("Sending Ack... " + getTimeStampedMessage(ack.toString()));
+            // System.out.println("Sending Ack... " + getTimeStampedMessage(ack.toString()));
 
             sendMessage(op.transactionTimeStamp.getProcessId(),
                         getTimeStampedMessage(ack.toString()));
         } else if (AckMutexMessage.isAckMutexMessage(message)){
             AckMutexMessage ack = new AckMutexMessage(message);
+            System.out.println(getTimeStampedMessage("Received Ack... " + ack.toString())); 
+
             if (ack.is_success){
                 isWaitingForAck = false;
             } else {
+                System.out.println(getTimeStampedMessage("Restarting transaction..."));
                 // Restart transaction.
                 operationIndex = transactionStartIndex;
                 // Remove old TS assigned to the transaction.
                 transactionTimeStampHash.remove(currTransactionId);
+                isWaitingForAck = false;
             }
         } else if (mutexMessage.isInitRequest()) {
             if (initNodes.size() == numNodes){
@@ -449,6 +464,8 @@ public class TransactionExecutor {
             initNodes.add(mutexMessage.getMessage().split(" ")[1]);
             if (initNodes.size() == numNodes){
                 try {
+                    System.out.println(getTimeStampedMessage(
+                        "I am the Bootstrap Server. Sending GO AHEAD...")); 
                     broadcastMessage(getTimeStampedMessage("GO_AHEAD_INIT"));
                     // Note: You need to send a message to yourself as well
                     sendMessage(selfHostname, selfPort,
@@ -461,17 +478,21 @@ public class TransactionExecutor {
             }
         } else if (mutexMessage.isInitResponse()){
             receivedGoAhead = true;
+            System.out.println(getTimeStampedMessage("Received Go Ahead...")); 
         }
     }
 
     /** 
      * Send op to the node having op's data item.
      * 
-     * @param op 
+     * Set isWaitingForAck as true.
      */
     public void sendOperation(TransactionOperation op){
         int destinationId = dataItemLocationHash.get(op.dataItemLabel);
+        System.out.println(getTimeStampedMessage("Sending operation... " + op.toString()));
         sendMessage(destinationId, getTimeStampedMessage(op.toString()));
+
+        isWaitingForAck = true;
     }
 
     /** 
@@ -488,14 +509,14 @@ public class TransactionExecutor {
             if (!d.canRead(op)){
                 return false;
             }
-            lastExecutionOutput = d.read();
+            lastExecutionOutput = d.read(op);
             return true;
         } else if (op.operationType == Operation.OperationType.WRITE) {
             d = dataItemHash.get(op.dataItemLabel);
             if (!d.canWrite(op)){
                 return false;
             }
-            d.write(op.parameter);
+            d.write(op);
             return true;
         }
         return false;

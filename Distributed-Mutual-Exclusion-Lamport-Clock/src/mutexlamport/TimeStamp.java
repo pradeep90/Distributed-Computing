@@ -46,8 +46,13 @@ public class TimeStamp implements Comparable<TimeStamp> {
     /**
      * @return BEFORE/EQUAL/AFTER if this is less/equal/greater than
      * otherTimeStamp.
+     *
+     * If otherTimeStamp is null, return AFTER.
      */
     public int compareTo (TimeStamp otherTimeStamp){
+        if (otherTimeStamp == null){
+            return AFTER;
+        }
         if (this == otherTimeStamp){
             return EQUAL;
         }

@@ -1,6 +1,5 @@
 *~
 *.class
 Distributed-Mutual-Exclusion-Lamport-Clock/classes/
-Distributed-Mutual-Exclusion-Lamport-Clock/bin/
 Distributed-Mutual-Exclusion-Lamport-Clock/build/
 Distributed-Mutual-Exclusion-Lamport-Clock/bin/shared-file.txt

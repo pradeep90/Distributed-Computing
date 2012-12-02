@@ -10,7 +10,7 @@ import java.util.regex.Matcher;
  */
 public class AckMutexMessage extends MutexMessage {
     TransactionOperation op;
-    boolean is_success;
+    boolean isTransactionRejected;
     int from_pid;
     String val;
 
@@ -22,9 +22,9 @@ public class AckMutexMessage extends MutexMessage {
         setFromString(this.message);
     }
     
-    public AckMutexMessage(TransactionOperation op, boolean is_success, int from_pid) {
+    public AckMutexMessage(TransactionOperation op, boolean isTransactionRejected, int from_pid) {
         this.op = op;
-        this.is_success = is_success;
+        this.isTransactionRejected = isTransactionRejected;
         this.from_pid = from_pid;
 
         val = null;
@@ -44,7 +44,7 @@ public class AckMutexMessage extends MutexMessage {
         if (m.find()) {
             from_pid = Integer.parseInt(m.group(1));
             op = TransactionOperation.fromTimeStampedString(m.group(2));
-            is_success = Boolean.valueOf(m.group(3));
+            isTransactionRejected = Boolean.valueOf(m.group(3));
 
             if (m.start(4) != -1){
                 // i.e., if val is missing
@@ -56,8 +56,26 @@ public class AckMutexMessage extends MutexMessage {
         }
     }
 
+    /** 
+     * @return true iff it is a READ and has read a value or it is a
+     * pre-write and has been buffered.
+     */
+    public boolean isSuccessfullyCompleted(){
+        if (isTransactionRejected){
+            return false;
+        }
+
+        if ((op.operationType == Operation.OperationType.READ
+             && op.parameter != null)
+            || (op.operationType == Operation.OperationType.WRITE)){
+            return true;
+        }
+
+        return false;
+    }
+        
     public String toString(){
-        String result = "ACK from " + from_pid + " " + op + " " + is_success;
+        String result = "ACK from " + from_pid + " " + op + " " + isTransactionRejected;
         if (op.operationType == Operation.OperationType.READ){
             result += " " + val;
         }

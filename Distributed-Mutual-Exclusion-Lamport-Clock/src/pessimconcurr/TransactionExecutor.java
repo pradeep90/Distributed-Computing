@@ -59,7 +59,11 @@ public class TransactionExecutor {
     int transactionStartIndex;
     int currTransactionId;
     String lastExecutionOutput;
+    int numOutstandingAcks;
+    boolean hasTransactionJustEnded = false;
+    boolean lastTransactionCommitDone = false;
 
+    HashSet<Integer> completedTransactions;
 
     HashMap<Integer, TimeStamp> transactionTimeStampHash;
     HashMap<String, Integer> dataItemLocationHash;
@@ -166,6 +170,7 @@ public class TransactionExecutor {
         this.dataItemLocationHash = dataItemLocationHash;
         dataItemHash = new HashMap<String, DataItem>();
         startIndexHash = new HashMap<Integer, Integer>();
+        completedTransactions = new HashSet<Integer>();
 
         for (String label : dataItemLocationHash.keySet()){
             if (dataItemLocationHash.get(label) == processId){
@@ -176,6 +181,8 @@ public class TransactionExecutor {
         operationIndex = 0;
         transactionStartIndex = 0;
         lastExecutionOutput = null;
+        numOutstandingAcks = 0;
+        currTransactionId = -1;
 
         initNodes = new HashSet<String>();
 
@@ -293,15 +300,33 @@ public class TransactionExecutor {
 
 	    	handleRequests ();
 
+                tryExecuteDataItemOps();
+
+                System.out.println(getTimeStampedMessage(
+                    "currTransactionId: " + currTransactionId));
+
                 System.out.println("dataItemHash");
                 System.out.println(getTimeStampedMessage(dataItemHash.toString()));
+
+                if (hasTransactionJustEnded){
+                    System.out.println(
+                        getTimeStampedMessage("End of previous transaction.")); 
+                    hasTransactionJustEnded = false;
+                    broadcastCommit(transactionOperationList.get(operationIndex - 1));
+                }
+
+                if (allOperationsOver() && !lastTransactionCommitDone){
+                    System.out.println(
+                        getTimeStampedMessage("End of previous transaction.")); 
+                    lastTransactionCommitDone = true;
+                    broadcastCommit(transactionOperationList.get(operationIndex - 1));
+                }
 
                 if (allOperationsOver() || isWaitingForAck){
                     continue;
                 }
 
                 currentTransactionOperation = getNextTransactionOperation();
-
                 sendOperation(currentTransactionOperation);
 
                 // TODO(spradeep): Should this be here?
@@ -310,6 +335,7 @@ public class TransactionExecutor {
         } catch (Exception e) {
 	    System.out.println ("Error while trying for mutual exclusion:"
 				+ e.toString ());
+            e.printStackTrace();
         } finally {
             receiverExecutor.shutdown();
             // senderExecutor.shutdown();
@@ -344,20 +370,96 @@ public class TransactionExecutor {
     public TransactionOperation getNextTransactionOperation(){
         // System.out.println ("transactionOperationList");
         // printTimeStampedMessage (transactionOperationList.toString ());
-
         TransactionOperation nextOperation = transactionOperationList.get (operationIndex);
 
         if (!transactionTimeStampHash.containsKey(nextOperation.transactionId)){
             // New transaction
             transactionTimeStampHash.put(nextOperation.transactionId, clock.getTimeStamp());
             transactionStartIndex = operationIndex;
-            currTransactionId = nextOperation.transactionId;
+            setCurrTransactionId(nextOperation.transactionId);
         }
         nextOperation.transactionTimeStamp = transactionTimeStampHash.get(
             nextOperation.transactionId);
 
+        System.out.println(getTimeStampedMessage("operationIndex: " + operationIndex));
         operationIndex++;
         return nextOperation;
+    }
+
+    /** 
+     * Set id for transaction currently in execution.
+     *
+     * Set hasTransactionJustEnded when a transaction has ended.
+     */
+    public void setCurrTransactionId(int nextId){
+        if (nextId == currTransactionId){
+            // Restart of the same transaction.
+            return;
+        }
+
+        if (currTransactionId == -1){
+            // First ever transaction (i.e., not coming after another
+            // transaction)
+            currTransactionId = nextId;
+            initNewTransaction();
+            return;
+        }
+
+
+        hasTransactionJustEnded = true;
+        currTransactionId = nextId;
+        initNewTransaction();
+
+        // if (startIndexHash.values().contains(operationIndex)
+        //     || operationIndex == transactionOperationList.size()){
+
+        //     // System.out.println(getTimeStampedMessage("End of previous transaction.")); 
+        // }
+
+    }
+
+    public void initNewTransaction(){
+        numOutstandingAcks = 0;
+    }
+
+
+    /** 
+     * Execute operations from the buffers of your data items (if
+     * possible).
+     * 
+     */
+    public void tryExecuteDataItemOps(){
+        for (DataItem d : dataItemHash.values()){
+            d.tryExecuteOps();
+        }
+
+        int i;
+        for (DataItem d : dataItemHash.values()){
+            while (d.nextReadAckIndex < d.readList.size()) {
+                TransactionOperation currOp = d.readList.get(d.nextReadAckIndex);
+                d.nextReadAckIndex++;
+
+                AckMutexMessage ack = new AckMutexMessage(
+                    currOp, false, processId);
+
+                // System.out.println("Sending Ack... " +
+                // getTimeStampedMessage(ack.toString()));
+
+                sendMessage(currOp.transactionTimeStamp.getProcessId(),
+                            getTimeStampedMessage(ack.toString()));
+            }
+
+            while (d.nextWriteAckIndex < d.writeList.size()) {
+                TransactionOperation currOp = d.writeList.get(d.nextWriteAckIndex);
+                d.nextWriteAckIndex++;
+
+                AckMutexMessage ack = new AckMutexMessage(
+                    currOp, false, processId);
+                // System.out.println("Sending Ack... " + getTimeStampedMessage(ack.toString()));
+                sendMessage(currOp.transactionTimeStamp.getProcessId(),
+                            getTimeStampedMessage(ack.toString()));
+            }
+        }
     }
 
     /** 
@@ -392,7 +494,6 @@ public class TransactionExecutor {
                     message += future.get();
                     // System.out.println ("getTimeStampedMessage (message)");
                     // System.out.println (getTimeStampedMessage (message));
-                    // TODO(spradeep): Handle the message
                     handleMessage (message);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
@@ -429,16 +530,11 @@ public class TransactionExecutor {
             TransactionOperation op = TransactionOperation.fromTimeStampedString(
                 mutexMessage.getMessage());
 
-            boolean is_success = executeOperation(op);
+            boolean isSuccess = canExecuteOperation(op);
 
             TimeStamp messageTimeStamp = mutexMessage.getTimeStamp ();
 
-            AckMutexMessage ack = new AckMutexMessage(op, is_success, processId);
-            if (op.operationType == Operation.OperationType.READ){
-                ack.val = lastExecutionOutput;
-            }
-
-            // System.out.println("Sending Ack... " + getTimeStampedMessage(ack.toString()));
+            AckMutexMessage ack = new AckMutexMessage(op, !isSuccess, processId);
 
             sendMessage(op.transactionTimeStamp.getProcessId(),
                         getTimeStampedMessage(ack.toString()));
@@ -446,15 +542,30 @@ public class TransactionExecutor {
             AckMutexMessage ack = new AckMutexMessage(message);
             System.out.println(getTimeStampedMessage("Received Ack... " + ack.toString())); 
 
-            if (ack.is_success){
-                isWaitingForAck = false;
-            } else {
+            if (ack.val == "Commit"){
+                for (DataItem d : dataItemHash.values()){
+                    d.markTransactionForCommit(ack.getTimeStamp());
+                }
+            } else if (ack.isTransactionRejected){
                 System.out.println(getTimeStampedMessage("Restarting transaction..."));
                 // Restart transaction.
                 operationIndex = transactionStartIndex;
                 // Remove old TS assigned to the transaction.
                 transactionTimeStampHash.remove(currTransactionId);
                 isWaitingForAck = false;
+            } else if (ack.isSuccessfullyCompleted()){
+                isWaitingForAck = false;
+
+                if (ack.op.operationType == Operation.OperationType.READ){
+                    numOutstandingAcks--;
+                } else if (ack.op.operationType == Operation.OperationType.WRITE
+                           && !ack.op.isPreWrite){
+
+                    // For pre-writes, the actual completion Ack will
+                    // come after commit, so decrement
+                    // numOutstandingAcks only for non pre-write Acks
+                    numOutstandingAcks--;
+                }
             }
         } else if (mutexMessage.isInitRequest()) {
             if (initNodes.size() == numNodes){
@@ -493,35 +604,46 @@ public class TransactionExecutor {
         sendMessage(destinationId, getTimeStampedMessage(op.toString()));
 
         isWaitingForAck = true;
+        numOutstandingAcks++;
     }
 
     /** 
-     * Execute operation on a data item.
-     *
-     * Set the output value (if any) in lastExecutionOutput.
+     * Broadcast COMMIT message.
      * 
-     * @return true iff execution succeeds.
+     * Set isWaitingForAck as true.
      */
-    public boolean executeOperation(TransactionOperation op){
-        DataItem d;
-        if (op.operationType == Operation.OperationType.READ){
-            d = dataItemHash.get(op.dataItemLabel);
-            if (!d.canRead(op)){
-                return false;
-            }
+    public void broadcastCommit(TransactionOperation op){
+        // Defining a READ op because only an Ack for a Read can have
+        // a `val` field showing up in the toString() output.
+        TransactionOperation tempOp = new TransactionOperation(op.transactionId + " R x")
+                .setTimeStamp(op.transactionTimeStamp);
+        AckMutexMessage commitAck = new AckMutexMessage(tempOp, false, processId);
+        commitAck.val = "Commit";
 
-            // TODO(spradeep): Return only if there are no prewrites waiting
-            lastExecutionOutput = d.read(op);
-            return true;
-        } else if (op.operationType == Operation.OperationType.WRITE) {
-            d = dataItemHash.get(op.dataItemLabel);
-            if (!d.canWrite(op)){
-                return false;
-            }
-            d.write(op);
-            return true;
+        try {
+            String messageString = getTimeStampedMessage(commitAck.toString());
+            System.out.println(messageString);
+            System.out.println("messageString: " + messageString);
+
+            broadcastMessage(messageString);
+
+            // Note: You need to send a message to yourself as well
+            sendMessage(selfHostname, selfPort, messageString);
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        return false;
+        isWaitingForAck = true;
+    }
+
+    /** 
+     * @return true iff execution of op on the appropriate data item
+     * is possible.
+     */
+    public boolean canExecuteOperation(TransactionOperation op){
+        DataItem d = dataItemHash.get(op.dataItemLabel);
+        return d.canExecuteOperation(op);
     }
 
     /** 

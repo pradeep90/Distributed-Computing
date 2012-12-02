@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Arrays;
 import java.util.ArrayList;
 import mutexlamport.TimeStamp;
+import mutexlamport.Operation;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -203,4 +204,134 @@ public class DataItemTest {
         assertEquals(value, testDataItem.value);
     }
 
+    /**
+     * Test method for {@link DataItem#doPreWrite()}.
+     */
+    @Test
+    public final void testDoPreWrite(){
+        TransactionOperation writeOperation = new TransactionOperation("2 W y Yo!");
+        String value = "Yo!";
+        testDataItem.doPreWrite(writeOperation);
+        String actual = testDataItem.preOperationBuffer.get(
+            testDataItem.preOperationBuffer.size() - 1).parameter;
+        assertEquals(value, actual);
+    }
+
+    /**
+     * Test method for {@link DataItem#addReadToBuffer()}.
+     */
+    @Test
+    public final void testAddReadToBuffer(){
+        TransactionOperation readOperation = new TransactionOperation("2 W y Yo!");
+        String value = "Yo!";
+        testDataItem.addReadToBuffer(readOperation);
+        String actual = testDataItem.preOperationBuffer.get(
+            testDataItem.preOperationBuffer.size() - 1).parameter;
+        assertEquals(value, actual);
+    }
+
+    /**
+     * Test method for {@link DataItem#markTransactionForCommit()}.
+     */
+    @Test
+    public final void testMarkTransactionForCommit(){
+        TimeStamp TS = new TimeStamp(13, 1);
+        TimeStamp otherTS = new TimeStamp(70, 2);
+
+        TransactionOperation readOperation2 = new TransactionOperation("1 R x")
+                .setTimeStamp(TS);
+        TransactionOperation writeOperation3 = new TransactionOperation("1 W y 53")
+                .setTimeStamp(TS);
+        TransactionOperation readOperation3 = new TransactionOperation("1 R x")
+                .setTimeStamp(TS);
+
+        TransactionOperation readOperation1 = new TransactionOperation("2 R x")
+                .setTimeStamp(otherTS);
+        TransactionOperation writeOperation1 = new TransactionOperation("2 W y 53")
+                .setTimeStamp(otherTS);
+        TransactionOperation writeOperation2 = new TransactionOperation("2 W y 53")
+                .setTimeStamp(otherTS);
+
+        TransactionOperation[] tempArr = {
+            readOperation1, readOperation2, readOperation3,
+            writeOperation1, writeOperation2, writeOperation3};
+
+        List<TransactionOperation> opArr = Arrays.<TransactionOperation>asList(tempArr);
+
+        for (TransactionOperation op : opArr){
+            if (op.operationType == Operation.OperationType.READ){
+                testDataItem.addReadToBuffer(op);
+            } else {
+                testDataItem.doPreWrite(op);
+            }
+        }
+
+        testDataItem.markTransactionForCommit(TS);
+
+        for (TransactionOperation op : opArr){
+            if (op.transactionTimeStamp == TS){
+                assertFalse(op.isPreWrite);
+            }
+            if (op.transactionTimeStamp == otherTS
+                && op.operationType == Operation.OperationType.WRITE){
+                assertTrue(op.isPreWrite); 
+            }
+        }
+    }
+
+    /**
+     * Test method for {@link DataItem#tryExecuteOps()}.
+     */
+    @Test
+    public final void testTryExecuteOps(){
+        TimeStamp TS = new TimeStamp(13, 1);
+        TimeStamp otherTS = new TimeStamp(70, 2);
+
+        TransactionOperation readOperation1 = new TransactionOperation("2 R x")
+                .setTimeStamp(otherTS);
+        TransactionOperation readOperation2 = new TransactionOperation("1 R x")
+                .setTimeStamp(TS);
+        TransactionOperation readOperation3 = new TransactionOperation("1 R x")
+                .setTimeStamp(TS);
+
+        TransactionOperation writeOperation1 = new TransactionOperation("2 W x 53")
+                .setTimeStamp(otherTS);
+        TransactionOperation writeOperation2 = new TransactionOperation("2 W x 53")
+                .setTimeStamp(otherTS);
+        TransactionOperation writeOperation3 = new TransactionOperation("1 W x 53")
+                .setTimeStamp(TS);
+
+        writeOperation1.isPreWrite = true;
+        writeOperation2.isPreWrite = true;
+        writeOperation3.isPreWrite = true;
+
+        TransactionOperation[] tempReadArr = {
+            readOperation1, readOperation2, readOperation3};
+        TransactionOperation[] tempWriteArr = {
+            writeOperation1, writeOperation2, writeOperation3};
+
+        List<TransactionOperation> readArr = Arrays.<TransactionOperation>asList(
+            tempReadArr);
+        List<TransactionOperation> writeArr = Arrays.<TransactionOperation>asList(
+            tempWriteArr);
+
+        TransactionOperation[] tempArr = {
+            readOperation1, readOperation2, readOperation3,
+            writeOperation1, writeOperation2, writeOperation3};
+
+        for (TransactionOperation op : tempArr){
+            testDataItem.preOperationBuffer.add(op);
+        }
+
+        testDataItem.value = "Yo";
+        testDataItem.tryExecuteOps();
+
+        for (TransactionOperation op : testDataItem.readList){
+            assertEquals(op.parameter, "Yo"); 
+        }
+
+        for (TransactionOperation op : testDataItem.writeList){
+            assertFalse(op.isPreWrite);
+        }
+    }
 }

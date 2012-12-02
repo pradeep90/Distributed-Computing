@@ -23,7 +23,7 @@ public class Operation {
     }
 
     public OperationType operationType;
-    public String parameter;
+    public String parameter = null;
 
     public Operation(){}
     

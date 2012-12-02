@@ -79,4 +79,6 @@
 *** DONE canWrite
 ** TODO Prewrite buffer, etc. at each data item - no replication
 *** TODO Have a loop where you go over the data items and execute buffered Reads and Writes
+* TODO Design it such that you execute at the Transaction level instead of at the Operation level
+** This seems to be the biggest problem I have at the moment.
 * TODO Optimistic Concurrency Control - R and W TS with full replication

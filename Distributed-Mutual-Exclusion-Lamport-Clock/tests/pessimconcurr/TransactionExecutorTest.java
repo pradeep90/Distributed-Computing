@@ -54,4 +54,14 @@ public class TransactionExecutorTest {
         assertEquals(1, transactionExecutor.transactionStartIndex); 
         assertEquals(2, transactionExecutor.operationIndex); 
     }
+
+    /**
+     * Test method for {@link TransactionExecutor#canExecuteOperation()}.
+     */
+    @Test
+    public final void testCanExecuteOperation(){
+        // assertEquals();
+
+    }
+
 }

@@ -18,7 +18,42 @@ public class AckMutexMessageTest {
     @After
     public void tearDown() {
     }
+
+    /**
+     * Test method for {@link AckMutexMessage#isSuccessfullyCompleted()}.
+     */
+    @Test
+    public final void testIsSuccessfullyCompleted_rejectedTransaction(){
+        TransactionOperation writeOperation = new TransactionOperation("2 W y 53");
+        AckMutexMessage ack = new AckMutexMessage(writeOperation, false, 3);
+
+        ack.isTransactionRejected = true;
+        assertFalse(ack.isSuccessfullyCompleted());
+    }
+
+    /**
+     * Test method for {@link AckMutexMessage#isSuccessfullyCompleted()}.
+     */
+    @Test
+    public final void testIsSuccessfullyCompleted_completedRead(){
+        TransactionOperation readOperation = new TransactionOperation("2 R y");
+        AckMutexMessage ack = new AckMutexMessage(readOperation, false, 3);
+
+        readOperation.parameter = "Yo, boyz!";
+        assertTrue(ack.isSuccessfullyCompleted()); 
+    }
     
+    /**
+     * Test method for {@link AckMutexMessage#isSuccessfullyCompleted()}.
+     */
+    @Test
+    public final void testIsSuccessfullyCompleted_completedWrite(){
+        TransactionOperation writeOperation = new TransactionOperation("2 W y 7");
+        AckMutexMessage ack = new AckMutexMessage(writeOperation, false, 3);
+
+        assertTrue(ack.isSuccessfullyCompleted());
+    }
+
     /**
      * Test method for {@link AckMutexMessage#toString()}.
      */
@@ -27,15 +62,15 @@ public class AckMutexMessageTest {
         TransactionOperation readOperation = new TransactionOperation("1 R x");
         TransactionOperation writeOperation = new TransactionOperation("2 W y 53");
 
-        String expected = "ACK from 3 " + writeOperation + " " + true;
-        assertEquals(expected, new AckMutexMessage(writeOperation, true, 3).toString());
+        String expected = "ACK from 3 " + writeOperation + " " + false;
+        assertEquals(expected, new AckMutexMessage(writeOperation, false, 3).toString());
 
         System.out.println ("writeOperation");
         System.out.println (writeOperation); 
 
-        String expectedRead = "ACK from 3 " + readOperation + " " + true + " " + "779";
+        String expectedRead = "ACK from 3 " + readOperation + " " + false + " " + "779";
         assertEquals(expectedRead,
-                     new AckMutexMessage(readOperation, true, 3).setVal("779").toString());
+                     new AckMutexMessage(readOperation, false, 3).setVal("779").toString());
     }
 
     /**
@@ -57,13 +92,13 @@ public class AckMutexMessageTest {
         AckMutexMessage writeAck = new AckMutexMessage(writeString);
         assertEquals(writeOperation, writeAck.op);
         assertEquals(3, writeAck.from_pid);
-        assertEquals(true, writeAck.is_success); 
+        assertEquals(true, writeAck.isTransactionRejected); 
         assertEquals(null, writeAck.val); 
 
         AckMutexMessage readAck = new AckMutexMessage(readString);
         assertEquals(readOperation, readAck.op);
         assertEquals(3, readAck.from_pid);
-        assertEquals(false, readAck.is_success); 
+        assertEquals(false, readAck.isTransactionRejected); 
         assertEquals("779", readAck.val); 
     }
 

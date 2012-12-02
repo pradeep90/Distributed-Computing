@@ -3,5 +3,4 @@
 1 W x 4
 2 W y 2 
 2 W x 6
-2 R y
 2 W y 7

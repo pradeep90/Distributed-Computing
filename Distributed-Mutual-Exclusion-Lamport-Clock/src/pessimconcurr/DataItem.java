@@ -62,6 +62,7 @@ public class DataItem {
      */
     public boolean canRead(TransactionOperation op){
         TimeStamp TS = op.transactionTimeStamp;
+
         if (TS.compareTo(WTM) == TimeStamp.BEFORE){
             return false;
         } else {
@@ -85,6 +86,23 @@ public class DataItem {
         readList.add(op);
         return value;
     }
+
+    /**
+     * Try adding a prewrite to the data item.
+     *
+     * @return true iff the prewrite was added successfully.
+     */
+    public boolean doPreWrite(TransactionOperation op){
+        TimeStamp TS = op.transactionTimeStamp;
+        if (TS.compareTo(RTM) == TimeStamp.BEFORE
+            || TS.compareTo(WTM) == TimeStamp.BEFORE){
+            return false;
+        } else {
+            // TODO(spradeep): Buffer the prewrite
+            return true;
+        }
+    }
+
 
     public void write(TransactionOperation op){
         writeList.add(op);

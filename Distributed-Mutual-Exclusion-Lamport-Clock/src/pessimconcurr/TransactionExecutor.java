@@ -509,6 +509,8 @@ public class TransactionExecutor {
             if (!d.canRead(op)){
                 return false;
             }
+
+            // TODO(spradeep): Return only if there are no prewrites waiting
             lastExecutionOutput = d.read(op);
             return true;
         } else if (op.operationType == Operation.OperationType.WRITE) {

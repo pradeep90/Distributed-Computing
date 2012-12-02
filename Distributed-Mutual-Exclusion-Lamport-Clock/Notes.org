@@ -78,4 +78,5 @@
 *** DONE canRead
 *** DONE canWrite
 ** TODO Prewrite buffer, etc. at each data item - no replication
+*** TODO Have a loop where you go over the data items and execute buffered Reads and Writes
 * TODO Optimistic Concurrency Control - R and W TS with full replication

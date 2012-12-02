@@ -116,7 +116,7 @@ javadoc: $(all_src_files)
 
 execute: compile
 	# cd bin/ && ./run-mutex-program.bash
-	cd bin/ && ./new-run-pessi-program.bash
+	cd bin/ && ./run-pessi-program.bash
 
 .PHONY: clean
 

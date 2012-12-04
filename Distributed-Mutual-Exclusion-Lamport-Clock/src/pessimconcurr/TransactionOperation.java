@@ -18,9 +18,12 @@ public class TransactionOperation extends Operation{
         transactionId = Integer.parseInt(tokens[0]);
         operationType = OperationType.getOperationType (tokens[1]);
         dataItemLabel = tokens[2];
-        if (this.operationType == OperationType.WRITE){
+        if (this.operationType == OperationType.READ && tokens.length == 3){
+            this.parameter = null;
+        } else {
             this.parameter = tokens[3];
         }
+        
         transactionTimeStamp = null;
         isPreWrite = false;
     }
@@ -56,7 +59,7 @@ public class TransactionOperation extends Operation{
         if (operationType == OperationType.READ){
             return transactionTimeStamp + " : "
                     + transactionId + " "
-                    + operationType.getValue() + " " + dataItemLabel;
+                    + operationType.getValue() + " " + dataItemLabel + " " + parameter;
         }
         else {
             return transactionTimeStamp + " : " + transactionId

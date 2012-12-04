@@ -1,6 +1,4 @@
-1 W x 0
-1 W y 1
-1 W x 4
+1 R y
 2 W y 2 
 2 W x 6
 2 W y 7

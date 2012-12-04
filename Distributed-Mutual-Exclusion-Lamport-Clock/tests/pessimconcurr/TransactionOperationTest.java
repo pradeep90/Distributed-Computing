@@ -62,7 +62,7 @@ public class TransactionOperationTest {
     @Test
     public final void testToString(){
         // Initially, Timestamp will be null
-        assertEquals("null : 1 R x", readOperation.toString());
+        assertEquals("null : 1 R x null", readOperation.toString());
         assertEquals("null : 2 W y 53", writeOperation.toString());
     }
 

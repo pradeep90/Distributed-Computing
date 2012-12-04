@@ -36,7 +36,7 @@ public class TransactionTest {
         RequestHandler requestHandler = new RequestHandler();
         Transaction foo = new Transaction(3, new TimeStamp(7, 2),
                                           tempList, requestHandler, null);
-        assertEquals("operationList.toString(): [null : 1 R x, null : 1 R y, null : 1 R z] isWaitingForAck: false isTransactionRejected: false transactionId: 3 TS: PID 2 TS 7 numOutstandingAcks: 0 ", foo.toString());
+        assertEquals("operationList.toString(): [null : 1 R x null, null : 1 R y null, null : 1 R z null] isWaitingForAck: false isTransactionRejected: false transactionId: 3 TS: PID 2 TS 7 numOutstandingAcks: 0 ", foo.toString());
     }
 
 }

@@ -81,16 +81,12 @@ public class Transaction {
                 TS = util.clock.getTimeStamp();
                 isTransactionRejected = false;
             }
-
-            // util.printTimeStampedMessage("numOutstandingAcks: " + numOutstandingAcks);
-            // util.printTimeStampedMessage("i: " + i);
         }
 
         broadcastCommit(transactionId, TS);
 
         isWaitingForCommit = true;
 
-        // TODO(spradeep): 
         while (numOutstandingAcks != 0){
             while (requestHandler.ackList.size() == 0){
                 tryExecuteDataItemOps();
@@ -107,12 +103,8 @@ public class Transaction {
     }
 
     public void handleAck(AckMutexMessage ack){
-        // if ("Commit".equals(ack.val)){
-        //     System.out.println("here");
-        //     for (DataItem d : util.dataItemHash.values()){
-        //         d.markTransactionForCommit(ack.getTimeStamp());
-        //     }
-        // }
+        util.printTimeStampedMessage("Inside handleAck: " + ack);
+        System.out.println("ack.op.parameter: " + ack.op.parameter);
         if (ack.isTransactionRejected){
             isTransactionRejected = true;
         } else if (ack.isSuccessfullyCompleted()){

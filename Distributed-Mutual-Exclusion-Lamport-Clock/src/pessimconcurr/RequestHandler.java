@@ -139,6 +139,7 @@ public class RequestHandler {
             util.printTimeStampedMessage("Received Ack... " + ack.toString());
             ackList.add(ack);
             if (ack.op.equals(util.currentOp)){
+                util.printTimeStampedMessage("Set isWaitingForAck to false");
                 isWaitingForAck = false;
             }
             if ("Commit".equals(ack.val)){

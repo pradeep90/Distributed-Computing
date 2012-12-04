@@ -128,52 +128,52 @@ public class DataItemTest {
         assertEquals(lowerTM, testDataItem.WTM); 
     }
 
-    /**
-     * Test method for {@link DataItem#handleRejectedTransaction()}.
-     */
-    @Test
-    public final void testHandleRejectedTransaction(){
-        TimeStamp TS = new TimeStamp(74, 2);
-        TimeStamp lowerRTM = new TimeStamp(74, 2);
-        TimeStamp higherRTM = new TimeStamp(75, 2);
+    // /**
+    //  * Test method for {@link DataItem#handleRejectedTransaction()}.
+    //  */
+    // @Test
+    // public final void testHandleRejectedTransaction(){
+    //     TimeStamp TS = new TimeStamp(74, 2);
+    //     TimeStamp lowerRTM = new TimeStamp(74, 2);
+    //     TimeStamp higherRTM = new TimeStamp(75, 2);
 
-        TransactionOperation readOperation1 = new TransactionOperation("2 R x")
-                .setTimeStamp(TS);
-        TransactionOperation readOperation2 = new TransactionOperation("1 R x")
-                .setTimeStamp(TS);
-        TransactionOperation readOperation3 = new TransactionOperation("1 R x")
-                .setTimeStamp(TS);
+    //     TransactionOperation readOperation1 = new TransactionOperation("2 R x")
+    //             .setTimeStamp(TS);
+    //     TransactionOperation readOperation2 = new TransactionOperation("1 R x")
+    //             .setTimeStamp(TS);
+    //     TransactionOperation readOperation3 = new TransactionOperation("1 R x")
+    //             .setTimeStamp(TS);
 
-        TransactionOperation writeOperation1 = new TransactionOperation("2 W y 53")
-                .setTimeStamp(TS);
-        TransactionOperation writeOperation2 = new TransactionOperation("2 W y 53")
-                .setTimeStamp(TS);
-        TransactionOperation writeOperation3 = new TransactionOperation("1 W y 53")
-                .setTimeStamp(TS);
+    //     TransactionOperation writeOperation1 = new TransactionOperation("2 W y 53")
+    //             .setTimeStamp(TS);
+    //     TransactionOperation writeOperation2 = new TransactionOperation("2 W y 53")
+    //             .setTimeStamp(TS);
+    //     TransactionOperation writeOperation3 = new TransactionOperation("1 W y 53")
+    //             .setTimeStamp(TS);
         
-        testDataItem.readList.add(readOperation1);
-        testDataItem.readList.add(readOperation2);
-        testDataItem.readList.add(readOperation3);
+    //     testDataItem.readList.add(readOperation1);
+    //     testDataItem.readList.add(readOperation2);
+    //     testDataItem.readList.add(readOperation3);
 
-        testDataItem.writeList.add(writeOperation1);
-        testDataItem.writeList.add(writeOperation2);
-        testDataItem.writeList.add(writeOperation3);
+    //     testDataItem.writeList.add(writeOperation1);
+    //     testDataItem.writeList.add(writeOperation2);
+    //     testDataItem.writeList.add(writeOperation3);
 
-        assertEquals(3, testDataItem.readList.size()); 
-        assertEquals(3, testDataItem.writeList.size()); 
+    //     assertEquals(3, testDataItem.readList.size()); 
+    //     assertEquals(3, testDataItem.writeList.size()); 
 
-        testDataItem.handleRejectedTransaction(3);
-        assertEquals(3, testDataItem.readList.size()); 
-        assertEquals(3, testDataItem.writeList.size()); 
+    //     testDataItem.handleRejectedTransaction(3);
+    //     assertEquals(3, testDataItem.readList.size()); 
+    //     assertEquals(3, testDataItem.writeList.size()); 
 
-        testDataItem.handleRejectedTransaction(1);
-        assertEquals(1, testDataItem.readList.size()); 
-        assertEquals(2, testDataItem.writeList.size()); 
+    //     testDataItem.handleRejectedTransaction(1);
+    //     assertEquals(1, testDataItem.readList.size()); 
+    //     assertEquals(2, testDataItem.writeList.size()); 
 
-        testDataItem.handleRejectedTransaction(2);
-        assertEquals(0, testDataItem.readList.size()); 
-        assertEquals(0, testDataItem.writeList.size()); 
-    }
+    //     testDataItem.handleRejectedTransaction(2);
+    //     assertEquals(0, testDataItem.readList.size()); 
+    //     assertEquals(0, testDataItem.writeList.size()); 
+    // }
 
     /**
      * Test method for {@link DataItem#read()}.
@@ -211,10 +211,14 @@ public class DataItemTest {
     public final void testDoPreWrite(){
         TransactionOperation writeOperation = new TransactionOperation("2 W y Yo!");
         String value = "Yo!";
+        writeOperation.isPreWrite = false;
         testDataItem.doPreWrite(writeOperation);
-        String actual = testDataItem.preOperationBuffer.get(
-            testDataItem.preOperationBuffer.size() - 1).parameter;
+        TransactionOperation actualOp = testDataItem.preOperationBuffer.get(
+            testDataItem.preOperationBuffer.size() - 1);
+        String actual = actualOp.parameter;
         assertEquals(value, actual);
+        assertEquals(writeOperation.isPreWrite, actualOp.isPreWrite); 
+        assertTrue(writeOperation.isPreWrite); 
     }
 
     /**

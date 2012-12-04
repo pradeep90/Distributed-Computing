@@ -48,20 +48,23 @@ public class DataItem {
     }
 
     /** 
-     * Remove all operations for this Transaction from readList and
-     * writeList.
+     * Remove all previous preOperations (which had come with an
+     * earlier TS) for this Transaction.
+     *
+     * i.e., the Transaction has been restarted and the old buffered
+     * preOperations need to be deleted.
      */
-    public void handleRejectedTransaction(int transactionId){
-        Iterator<TransactionOperation> it = readList.iterator();
+    public void handleRejectedTransaction(TransactionOperation op){
+        TransactionOperation prevOp;
+        Iterator<TransactionOperation> it = preOperationBuffer.iterator();
         while (it.hasNext()) {
-            if(it.next().transactionId == transactionId)
+            prevOp = it.next();
+            if(prevOp.transactionId == op.transactionId
+               && prevOp.transactionTimeStamp.compareTo(
+                   op.transactionTimeStamp) == TimeStamp.BEFORE){
                 it.remove();
-        }
-
-        Iterator<TransactionOperation> writeIter = writeList.iterator();
-        while (writeIter.hasNext()) {
-            if(writeIter.next().transactionId == transactionId)
-                writeIter.remove();
+            }
+            
         }
     }
 
@@ -112,6 +115,14 @@ public class DataItem {
         this.value = op.parameter;
     }
 
+    public void doPreOperation(TransactionOperation op){
+        if (op.operationType == Operation.OperationType.READ){
+            addReadToBuffer(op);
+        } else {
+            doPreWrite(op);
+        }
+    }
+
     /**
      * Try adding a prewrite to the data item.
      *
@@ -136,7 +147,10 @@ public class DataItem {
      */
     public void markTransactionForCommit(TimeStamp TS){
         for (TransactionOperation op : preOperationBuffer){
-            if (op.transactionTimeStamp == TS){
+            System.out.println("op.transactionTimeStamp: " + op.transactionTimeStamp);
+            System.out.println("TS: " + TS);
+            if (op.transactionTimeStamp.equals(TS)){
+                System.out.println("Marked transaction op: " + op);
                 op.isPreWrite = false;
             }
         }
@@ -155,6 +169,8 @@ public class DataItem {
                 break;
             }
 
+            System.out.println("inside tryExecuteOps"); 
+
             if (currOp.operationType == Operation.OperationType.READ){
                 currOp.parameter = read(currOp);
             } else {
@@ -168,6 +184,14 @@ public class DataItem {
 
     public String toString(){
         String currValue = value.equals("") ? "None": value;
-        return "<DataItem " + label + ": " + currValue + " " + "Reads: " + readList.toString() + " Writes: " + writeList.toString() + ">";
+        String result = "";
+        result += "<DataItem " + label + ": " + currValue + " " + "Reads: " + readList.toString() + " Writes: " + writeList.toString();
+        result += " preOperationBuffer: ";
+        for (TransactionOperation op : preOperationBuffer){
+            result += " " + op.toString() + " isPreWrite: " + op.isPreWrite;
+        }
+
+        result += " >";
+        return result;
     }
 }

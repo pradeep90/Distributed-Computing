@@ -8,7 +8,7 @@ public class TransactionOperation extends Operation{
     public TimeStamp transactionTimeStamp;
     public String dataItemLabel;
     public static final String OPERATION_TS_DELIMITER = " \\: ";
-    public boolean isPreWrite = false;
+    public boolean isPreWrite;
 
     /**
      * operationString should be of the form "TransactionID (R|W) dataItemLabel [parameter]".
@@ -22,6 +22,7 @@ public class TransactionOperation extends Operation{
             this.parameter = tokens[3];
         }
         transactionTimeStamp = null;
+        isPreWrite = false;
     }
 
     public static TransactionOperation fromTimeStampedString(

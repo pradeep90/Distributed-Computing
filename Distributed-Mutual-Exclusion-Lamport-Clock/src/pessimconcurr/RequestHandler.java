@@ -128,30 +128,20 @@ public class RequestHandler {
 
             DataItem d = util.dataItemHash.get(op.dataItemLabel);
 
-            // util.printTimeStampedMessage("Before doPreOperation - op: " + op + " isPreWrite: " + op.isPreWrite);
             d.doPreOperation(op);
-            // util.printTimeStampedMessage("After doPreOperation - op: " + op + " isPreWrite: " + op.isPreWrite);
             
             TimeStamp messageTimeStamp = mutexMessage.getTimeStamp ();
             AckMutexMessage ack = new AckMutexMessage(op, !isSuccess, util.processId);
-            // util.printTimeStampedMessage("After Ack creation - op: " + ack.op + " isPreWrite: " + ack.op.isPreWrite);
-
-            // util.printTimeStampedMessage("Sent ack... " + ack);
             sendMessage(op.transactionTimeStamp.getProcessId(),
                         util.getTimeStampedMessage(ack.toString()));
-            // util.printTimeStampedMessage("After Send message - op: " + ack.op + " isPreWrite: " + ack.op.isPreWrite);
         } else if (AckMutexMessage.isAckMutexMessage(message)){
             AckMutexMessage ack = new AckMutexMessage(message);
             util.printTimeStampedMessage("Received Ack... " + ack.toString());
             ackList.add(ack);
-            // util.printTimeStampedMessage("After Received Ack - op: " + ack.op + " isPreWrite: " + ack.op.isPreWrite);
-
-            // if (!"Commit".equals(ack.val)){
-            //     isWaitingForAck = false;
-            // }
             if (ack.op.equals(util.currentOp)){
                 isWaitingForAck = false;
-            } else if ("Commit".equals(ack.val)){
+            }
+            if ("Commit".equals(ack.val)){
                 System.out.println("Commit... going to markTransactionForCommit");
                 for (DataItem d : util.dataItemHash.values()){
                     d.markTransactionForCommit(ack.op.transactionTimeStamp);
@@ -166,7 +156,8 @@ public class RequestHandler {
             initNodes.add(mutexMessage.getMessage().split(" ")[1]);
             if (initNodes.size() == util.numNodes){
                 try {
-                    util.printTimeStampedMessage("I am the Bootstrap Server. Sending GO AHEAD..."); 
+                    util.printTimeStampedMessage(
+                        "I am the Bootstrap Server. Sending GO AHEAD..."); 
                     broadcastMessage(util.getTimeStampedMessage("GO_AHEAD_INIT"));
                     // Note: You need to send a message to yourself as well
                     sendMessage(util.selfHostname, util.selfPort,

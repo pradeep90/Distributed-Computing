@@ -316,7 +316,11 @@ public class TransactionExecutor {
 
         executeTransactions();
 
+        util.printTimeStampedMessage("All Transactions over.");
+
         while (true){
+            util.printTimeStampedMessage("util.dataItemHash: " + util.dataItemHash);
+            tryExecuteDataItemOps();
             requestHandler.handleRequests();
         }
         
@@ -365,7 +369,7 @@ public class TransactionExecutor {
         // } finally {
         //     receiverExecutor.shutdown();
         //     // senderExecutor.shutdown();
-        // }
+                // }
     }
 
     /** 
@@ -458,5 +462,45 @@ public class TransactionExecutor {
 
     public void initNewTransaction(){
         numOutstandingAcks = 0;
+    }
+
+    /** 
+     * Execute operations from the buffers of your data items (if
+     * possible).
+     * 
+     */
+    public void tryExecuteDataItemOps(){
+        for (DataItem d : util.dataItemHash.values()){
+            d.tryExecuteOps();
+        }
+
+        int i;
+        for (DataItem d : util.dataItemHash.values()){
+            while (d.nextReadAckIndex < d.readList.size()) {
+                TransactionOperation currOp = d.readList.get(d.nextReadAckIndex);
+                d.nextReadAckIndex++;
+
+                AckMutexMessage ack = new AckMutexMessage(
+                    currOp, false, util.processId);
+
+                System.out.println("tryExecuteOps - Sending Ack... "
+                                   + util.getTimeStampedMessage(ack.toString()));
+
+                requestHandler.sendMessage(currOp.transactionTimeStamp.getProcessId(),
+                                           util.getTimeStampedMessage(ack.toString()));
+            }
+
+            while (d.nextWriteAckIndex < d.writeList.size()) {
+                TransactionOperation currOp = d.writeList.get(d.nextWriteAckIndex);
+                d.nextWriteAckIndex++;
+
+                AckMutexMessage ack = new AckMutexMessage(
+                    currOp, false, util.processId);
+                System.out.println("tryExecuteOps - Sending Ack... "
+                                   + util.getTimeStampedMessage(ack.toString()));
+                requestHandler.sendMessage(currOp.transactionTimeStamp.getProcessId(),
+                                           util.getTimeStampedMessage(ack.toString()));
+            }
+        }
     }
 }
